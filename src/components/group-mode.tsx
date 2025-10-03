@@ -151,8 +151,9 @@ function ParticipantCard({
             }}
             className="justify-start flex-wrap pt-2"
           >
-            {moods.map(({ value, label }) => (
+            {moods.map(({ value, label, icon: Icon }) => (
               <ToggleGroupItem key={value} value={value} aria-label={label}>
+                <Icon className="mr-2 h-5 w-5" />
                 {label}
               </ToggleGroupItem>
             ))}

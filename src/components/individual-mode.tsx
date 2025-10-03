@@ -51,6 +51,7 @@ export default function IndividualMode() {
   const [state, formAction] = useActionState(findIndividualMovies, initialState);
   const { toast } = useToast();
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [mood, setMood] = useState('Chill');
 
   useEffect(() => {
     if (state?.error) {
@@ -76,22 +77,24 @@ export default function IndividualMode() {
         </CardHeader>
         <CardContent>
           <form action={formAction} className="space-y-6">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <Label className="text-lg font-semibold">1. Pick Your Mood</Label>
-              <RadioGroup defaultValue='Chill' name="mood" className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-2" required>
+              <input type="hidden" name="mood" value={mood} />
+              <ToggleGroup
+                type="single"
+                defaultValue="Chill"
+                onValueChange={(value) => {
+                  if (value) setMood(value);
+                }}
+                className="flex-wrap justify-start"
+              >
                 {moods.map(({ value, label, icon: Icon }) => (
-                  <div key={value}>
-                    <RadioGroupItem value={value} id={`mood-${value}`} className="sr-only" />
-                    <Label
-                      htmlFor={`mood-${value}`}
-                      className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer [&:has([data-state=checked])]:border-primary"
-                    >
-                      <Icon className="mb-2 h-7 w-7" />
-                      {label}
-                    </Label>
-                  </div>
+                  <ToggleGroupItem key={value} value={value} aria-label={label}>
+                    <Icon className="mr-2 h-5 w-5" />
+                    {label}
+                  </ToggleGroupItem>
                 ))}
-              </RadioGroup>
+              </ToggleGroup>
             </div>
 
             <Separator />
