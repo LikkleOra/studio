@@ -1,3 +1,64 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "Abstract movie poster 1",
+      "imageUrl": "https://images.unsplash.com/photo-1611419010196-a360856fc42f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    },
+    {
+      "id": "2",
+      "description": "Abstract movie poster 2",
+      "imageUrl": "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    },
+    {
+      "id": "3",
+      "description": "Abstract movie poster 3",
+      "imageUrl": "https://images.unsplash.com/photo-1511875762315-c773eb98eec0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    },
+    {
+      "id": "4",
+      "description": "Abstract movie poster 4",
+      "imageUrl": "https://images.unsplash.com/photo-1616530940355-351fabd9524b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    },
+    {
+      "id": "5",
+      "description": "Abstract movie poster 5",
+      "imageUrl": "https://images.unsplash.com/photo-1702635429447-06e9ee0c617c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    },
+    {
+      "id": "6",
+      "description": "Abstract movie poster 6",
+      "imageUrl": "https://images.unsplash.com/photo-1635805737707-575885ab0820?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    },
+    {
+      "id": "7",
+      "description": "Abstract movie poster 7",
+      "imageUrl": "https://images.unsplash.com/photo-1590179068383-b9c69aacebd3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    },
+    {
+      "id": "8",
+      "description": "Abstract movie poster 8",
+      "imageUrl": "https://images.unsplash.com/photo-1616530940355-351fabd9524b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    },
+    {
+      "id": "9",
+      "description": "Abstract movie poster 9",
+      "imageUrl": "https://images.unsplash.com/photo-1616530940355-351fabd9524b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    },
+    {
+      "id": "10",
+      "description": "Abstract movie poster 10",
+      "imageUrl": "https://images.unsplash.com/photo-1511875762315-c773eb98eec0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTk0NDA5ODF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
+    }
+  ]
 }

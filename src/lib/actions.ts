@@ -1,0 +1,111 @@
+'use server';
+
+import { smartMovieBlending, SmartMovieBlendingInput } from '@/ai/flows/smart-movie-blending';
+import { groupTasteFusion, GroupTasteFusionInput } from '@/ai/flows/group-taste-fusion';
+import { z } from 'zod';
+import type { IndividualMovieState, GroupMovieState } from './types';
+
+const individualSchema = z.object({
+  mood: z.string().min(1, 'Mood is required.'),
+  vibe: z.string().optional(),
+  genres: z.string().optional(),
+});
+
+export async function findIndividualMovies(
+  prevState: IndividualMovieState,
+  formData: FormData
+): Promise<IndividualMovieState> {
+  const validatedFields = individualSchema.safeParse({
+    mood: formData.get('mood'),
+    vibe: formData.get('vibe'),
+    genres: formData.get('genres'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      error: 'Invalid input. Please check your selections.',
+    };
+  }
+
+  const { mood, vibe, genres } = validatedFields.data;
+  const genreList = genres ? genres.split(',') : [];
+
+  const aiInput: SmartMovieBlendingInput = {
+    mood,
+    vibe: vibe || 'any movie',
+    genres: genreList,
+  };
+
+  try {
+    const movies = await smartMovieBlending(aiInput);
+    if (!movies || movies.length === 0) {
+      return {
+        error: "We couldn't find any movies for that vibe. Try being a bit more general.",
+      };
+    }
+    return { movies };
+  } catch (error) {
+    console.error(error);
+    return {
+      error: 'An AI error occurred. Please try again later.',
+    };
+  }
+}
+
+const groupSchema = z.object({
+  participants: z.string().min(1, 'At least one participant is required.'),
+});
+
+export async function findGroupMovies(
+  prevState: GroupMovieState,
+  formData: FormData
+): Promise<GroupMovieState> {
+  const validatedFields = groupSchema.safeParse({
+    participants: formData.get('participants'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      error: 'Invalid participant data.',
+    };
+  }
+
+  try {
+    const participants = JSON.parse(validatedFields.data.participants);
+    
+    if (!Array.isArray(participants) || participants.length === 0) {
+      return { error: 'No participants provided.' };
+    }
+    
+    // The AI flow expects an array of participants with mood, genres, and optional vibe.
+    const aiInput: GroupTasteFusionInput = {
+      participants: participants.map((p) => ({
+        mood: p.mood || 'any',
+        genres: p.genres || [],
+        vibe: p.vibe || '',
+      })),
+    };
+
+    const movies = await groupTasteFusion(aiInput);
+
+    // AI flow might return mock data, so we add placeholder images manually
+    const moviesWithImages = movies.map((movie, index) => ({
+        ...movie,
+        posterUrl: `https://picsum.photos/seed/${index + 100}/400/600`,
+    }));
+    
+    if (!moviesWithImages || moviesWithImages.length === 0) {
+      return {
+        error: "We couldn't find a good match for your group. Try adjusting your preferences.",
+      };
+    }
+    
+    return { movies: moviesWithImages };
+
+  } catch (error) {
+    console.error(error);
+    return {
+      error: 'An AI error occurred or participant data was malformed. Please try again.',
+    };
+  }
+}
