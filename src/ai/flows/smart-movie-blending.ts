@@ -38,16 +38,14 @@ const prompt = ai.definePrompt({
   input: {schema: SmartMovieBlendingInputSchema},
   output: {schema: SmartMovieBlendingOutputSchema},
   tools: [searchMoviesTool, getRecommendationsTool],
-  prompt: `You are a movie recommendation expert. Based on the user's mood, preferred movie (vibe), and selected genres, recommend 5-10 movies.
-  
-  Use the available tools to find movies that match the user's criteria.
+  prompt: `You are a movie recommendation expert. Use the searchMovies tool to find 5-10 movies that match the user's criteria.
 
+The user's criteria are:
 Mood: {{{mood}}}
 Vibe: {{{vibe}}}
 Genres: {{#each genres}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
 
-Format your response as a JSON array of objects. Each object should include the movie title, a confidence score (0-1), a brief explanation of why the movie works, and the poster URL.
-`,
+For each recommended movie, provide a confidence score and a brief reason for the recommendation.`,
 });
 
 const smartMovieBlendingFlow = ai.defineFlow(
