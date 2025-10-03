@@ -3,27 +3,25 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import type { MovieRecommendation } from '@/lib/types';
-import { placeholderImages } from '@/lib/placeholder-images';
 
 type MovieCardProps = {
   movie: MovieRecommendation;
   index: number;
 };
 
-export function MovieCard({ movie, index }: MovieCardProps) {
+export function MovieCard({ movie }: MovieCardProps) {
   const confidence = movie.confidenceScore * 100;
-  const placeholder = placeholderImages[index % placeholderImages.length];
 
   return (
     <Card className="flex flex-col overflow-hidden h-full border-2 border-transparent hover:border-primary transition-all duration-300 hover:shadow-2xl">
       <CardContent className="p-0 relative">
         <Image
-          src={placeholder.imageUrl}
+          src={movie.posterUrl!}
           alt={`Poster for ${movie.title}`}
           width={400}
           height={600}
           className="w-full h-auto object-cover"
-          data-ai-hint={placeholder.imageHint}
+          data-ai-hint="movie poster"
         />
       </CardContent>
       <CardHeader className="flex-grow">

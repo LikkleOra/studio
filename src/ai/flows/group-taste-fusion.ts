@@ -9,7 +9,8 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { searchMoviesTool } from '@/ai/tools/tmdb';
+import {z} from 'zod';
 
 const GroupTasteFusionInputSchema = z.object({
   participants: z.array(
@@ -43,7 +44,10 @@ const prompt = ai.definePrompt({
   name: 'groupTasteFusionPrompt',
   input: {schema: GroupTasteFusionInputSchema},
   output: {schema: GroupTasteFusionOutputSchema},
+  tools: [searchMoviesTool],
   prompt: `You are an AI movie recommendation expert. Given the preferences of a group of people, recommend movies that would satisfy the entire group.
+
+Use the searchMovies tool to find movies that match the combined preferences of the group.
 
 For each movie, calculate a Group Match Percentage indicating how well the movie aligns with the overall group preferences. Also, provide a "Why this works" breakdown explaining why the movie is a good fit for the group, considering their selected moods, genres, and vibe references.
 

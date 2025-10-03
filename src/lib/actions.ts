@@ -4,6 +4,7 @@ import { smartMovieBlending, SmartMovieBlendingInput } from '@/ai/flows/smart-mo
 import { groupTasteFusion, GroupTasteFusionInput } from '@/ai/flows/group-taste-fusion';
 import { z } from 'zod';
 import type { IndividualMovieState, GroupMovieState } from './types';
+import { placeholderImages } from './placeholder-images';
 
 const individualSchema = z.object({
   mood: z.string().min(1, 'Mood is required.'),
@@ -43,7 +44,11 @@ export async function findIndividualMovies(
         error: "We couldn't find any movies for that vibe. Try being a bit more general.",
       };
     }
-    return { movies };
+    const moviesWithPlaceholders = movies.map((movie, index) => ({
+      ...movie,
+      posterUrl: movie.posterUrl || placeholderImages[index % placeholderImages.length].imageUrl,
+    }));
+    return { movies: moviesWithPlaceholders };
   } catch (error) {
     console.error(error);
     return {
@@ -77,7 +82,6 @@ export async function findGroupMovies(
       return { error: 'No participants provided.' };
     }
     
-    // The AI flow expects an array of participants with mood, genres, and optional vibe.
     const aiInput: GroupTasteFusionInput = {
       participants: participants.map((p) => ({
         mood: p.mood || 'any',
@@ -87,20 +91,14 @@ export async function findGroupMovies(
     };
 
     const movies = await groupTasteFusion(aiInput);
-
-    // AI flow might return mock data, so we add placeholder images manually
-    const moviesWithImages = movies.map((movie, index) => ({
-        ...movie,
-        posterUrl: `https://picsum.photos/seed/${index + 100}/400/600`,
-    }));
     
-    if (!moviesWithImages || moviesWithImages.length === 0) {
+    if (!movies || movies.length === 0) {
       return {
         error: "We couldn't find a good match for your group. Try adjusting your preferences.",
       };
     }
     
-    return { movies: moviesWithImages };
+    return { movies };
 
   } catch (error) {
     console.error(error);

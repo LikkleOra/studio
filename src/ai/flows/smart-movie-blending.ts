@@ -9,11 +9,12 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { searchMoviesTool, getRecommendationsTool } from '@/ai/tools/tmdb';
+import {z} from 'zod';
 
 const SmartMovieBlendingInputSchema = z.object({
   mood: z.string().describe('The selected mood (e.g., Chill, Hype, Cozy).'),
-  vibe: z.string().describe('A movie title to find similar movies based on AI embeddings (e.g., Shrek, Inception).'),
+  vibe: z.string().describe('A movie title or general vibe to find similar movies (e.g., Shrek, Inception, "a quiet rainy day").'),
   genres: z.array(z.string()).describe('An array of selected genres (e.g., Horror, Comedy, Romance).'),
 });
 export type SmartMovieBlendingInput = z.infer<typeof SmartMovieBlendingInputSchema>;
@@ -23,8 +24,9 @@ const SmartMovieBlendingOutputSchema = z.array(
     title: z.string().describe('The title of the movie.'),
     confidenceScore: z.number().describe('A score indicating how well the movie matches the input criteria.'),
     reason: z.string().describe('Explanation of why this movie works, including genre and mood.'),
+    posterUrl: z.string().nullable().describe('The URL of the movie poster.'),
   })
-).length(z.number().min(5).max(10)).describe('A list of 5-10 movie recommendations');
+).describe('A list of movie recommendations');
 export type SmartMovieBlendingOutput = z.infer<typeof SmartMovieBlendingOutputSchema>;
 
 export async function smartMovieBlending(input: SmartMovieBlendingInput): Promise<SmartMovieBlendingOutput> {
@@ -35,13 +37,16 @@ const prompt = ai.definePrompt({
   name: 'smartMovieBlendingPrompt',
   input: {schema: SmartMovieBlendingInputSchema},
   output: {schema: SmartMovieBlendingOutputSchema},
+  tools: [searchMoviesTool, getRecommendationsTool],
   prompt: `You are a movie recommendation expert. Based on the user's mood, preferred movie (vibe), and selected genres, recommend 5-10 movies.
+  
+  Use the available tools to find movies that match the user's criteria.
 
 Mood: {{{mood}}}
-Vibe (Similar Movie): {{{vibe}}}
+Vibe: {{{vibe}}}
 Genres: {{#each genres}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
 
-Format your response as a JSON array of objects. Each object should include the movie title, a confidence score (0-1), and a brief explanation of why the movie works based on the provided mood, vibe, and genres.
+Format your response as a JSON array of objects. Each object should include the movie title, a confidence score (0-1), a brief explanation of why the movie works, and the poster URL.
 `,
 });
 
