@@ -4,6 +4,7 @@ import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import type { GroupMovieRecommendation } from '@/lib/types';
 import { Users } from 'lucide-react';
+import { placeholderImages } from '@/lib/placeholder-images';
 
 type GroupMovieCardProps = {
   movie: GroupMovieRecommendation;
@@ -11,12 +12,14 @@ type GroupMovieCardProps = {
 
 export function GroupMovieCard({ movie }: GroupMovieCardProps) {
   const matchPercentage = movie.groupMatchPercentage;
+  const posterUrl = movie.posterUrl || placeholderImages[0].imageUrl;
+
 
   return (
     <Card className="flex flex-col overflow-hidden h-full border-2 border-transparent hover:border-primary transition-all duration-300 hover:shadow-2xl">
       <CardContent className="p-0 relative">
         <Image
-          src={movie.posterUrl}
+          src={posterUrl}
           alt={`Poster for ${movie.title}`}
           width={400}
           height={600}

@@ -25,7 +25,7 @@ export type GroupTasteFusionInput = z.infer<typeof GroupTasteFusionInputSchema>;
 
 const GroupTasteFusionOutputSchema = z.array(
   z.object({
-    movieId: z.string().describe('The ID of the recommended movie or show.'),
+    movieId: z.number().describe('The ID of the recommended movie or show.'),
     title: z.string().describe('The title of the recommended movie or show.'),
     posterUrl: z.string().describe('The URL of the poster.'),
     groupMatchPercentage: z.number().describe('The percentage of how well the item matches the group preferences.'),
@@ -45,18 +45,20 @@ const prompt = ai.definePrompt({
   input: {schema: GroupTasteFusionInputSchema},
   output: {schema: GroupTasteFusionOutputSchema},
   tools: [searchContentTool],
-  prompt: `You are an AI recommendation expert for movies and TV shows. Given the preferences of a group of people, recommend content that would satisfy the entire group.
+  prompt: `You are an AI recommendation expert for movies and TV shows. Your goal is to recommend content that satisfies the entire group.
 
-Use the searchContent tool to find movies and TV shows ('any' media type) that match the combined preferences of the group.
-
-For each item, calculate a Group Match Percentage indicating how well it aligns with the overall group preferences. Also, provide a "Why this works" breakdown explaining why the item is a good fit for the group, considering their selected moods, genres, and vibe references. Do not recommend an item if it doesn't have a poster.
+1.  Analyze the preferences of all participants. Combine their selected moods, genres, and vibe references to create a unified search query.
+2.  Use the \`searchContent\` tool to find movies and TV shows ('any' media type) that match these combined preferences.
+3.  For each potential recommendation, calculate a 'Group Match Percentage' indicating how well it aligns with the overall group preferences.
+4.  Provide a "Why this works" breakdown explaining why the item is a good fit, considering the different tastes within the group.
+5.  Do not recommend any item that does not have a poster URL.
 
 Group Preferences:
 {{#each participants}}
-  Participant {{@index}}:
-    Mood: {{{mood}}}
-    Genres: {{#each genres}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
-    Vibe: {{{vibe}}}
+- Participant {{@index}}:
+    - Mood: {{{mood}}}
+    - Genres: {{#each genres}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+    - Vibe: {{{vibe}}}
 {{/each}}`,
 });
 
