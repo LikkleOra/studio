@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { findGroupMovies } from '@/lib/actions';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card';
@@ -46,7 +46,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 }
 
 export default function GroupMode() {
-  const [state, formAction] = useFormState(findGroupMovies, initialState);
+  const [state, formAction] = useActionState(findGroupMovies, initialState);
   const { toast } = useToast();
   const [participants, setParticipants] = useState<Participant[]>([
     { id: `p${Date.now()}`, mood: 'Chill', genres: ['Comedy'], vibe: '' },

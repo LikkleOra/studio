@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useEffect, useState, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { findIndividualMovies } from '@/lib/actions';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -47,7 +47,7 @@ function SubmitButton() {
 }
 
 export default function IndividualMode() {
-  const [state, formAction] = useFormState(findIndividualMovies, initialState);
+  const [state, formAction] = useActionState(findIndividualMovies, initialState);
   const { toast } = useToast();
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 
