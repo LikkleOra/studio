@@ -1,4 +1,4 @@
-import type { Movie } from './types';
+import type { Movie, TmdbMovie } from './types';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
@@ -47,7 +47,7 @@ async function fetchFromTMDB(endpoint: string, params: Record<string, string> = 
   return response.json();
 }
 
-export async function searchMovies(query?: string, genreNames?: string[]): Promise<Movie[]> {
+export async function searchMovies(query?: string, genreNames?: string[]): Promise<TmdbMovie[]> {
   const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
 
   const params: Record<string, string> = {
@@ -56,18 +56,25 @@ export async function searchMovies(query?: string, genreNames?: string[]): Promi
     include_adult: 'false',
   };
 
-  let results: Movie[];
+  let results: TmdbMovie[];
 
   if (query) {
     params.query = query;
+    if (genreIds) {
+        // TMDB search doesn't directly filter by genre in the same way discover does.
+        // We'll fetch and then filter.
+    }
     const data = await fetchFromTMDB('/search/movie', params);
     results = data.results || [];
   } else {
+    if (genreIds) {
+        params.with_genres = genreIds;
+    }
     const data = await fetchFromTMDB('/discover/movie', params);
      results = data.results || [];
   }
 
-  if (genreIds && genreIds.length > 0) {
+  if (query && genreIds && genreIds.length > 0) {
     const requestedGenreIds = genreIds.split(',').map(Number);
     results = results.filter(movie => 
         movie.genre_ids?.some((id: number) => requestedGenreIds.includes(id))
@@ -78,7 +85,7 @@ export async function searchMovies(query?: string, genreNames?: string[]): Promi
 }
 
 
-export async function getRecommendations(movieId: number): Promise<Movie[]> {
+export async function getRecommendations(movieId: number): Promise<TmdbMovie[]> {
   const data = await fetchFromTMDB(`/movie/${movieId}/recommendations`, {
     language: 'en-US',
     page: '1',
