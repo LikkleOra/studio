@@ -58,27 +58,23 @@ export async function searchMovies(query?: string, genreNames?: string[]): Promi
 
   let results: TmdbMovie[];
 
-  if (query) {
-    params.query = query;
-    if (genreIds) {
-        // TMDB search doesn't directly filter by genre in the same way discover does.
-        // We'll fetch and then filter.
+  // Prioritize discover endpoint if genres are selected for better filtering
+  if (genreIds) {
+    params.with_genres = genreIds;
+    if(query) {
+      // Use the query as a keyword search within the discover endpoint
+      params.with_keywords = query; 
     }
+    const data = await fetchFromTMDB('/discover/movie', params);
+    results = data.results || [];
+  } else if (query) {
+    params.query = query;
     const data = await fetchFromTMDB('/search/movie', params);
     results = data.results || [];
   } else {
-    if (genreIds) {
-        params.with_genres = genreIds;
-    }
-    const data = await fetchFromTMDB('/discover/movie', params);
-     results = data.results || [];
-  }
-
-  if (query && genreIds && genreIds.length > 0) {
-    const requestedGenreIds = genreIds.split(',').map(Number);
-    results = results.filter(movie => 
-        movie.genre_ids?.some((id: number) => requestedGenreIds.includes(id))
-    );
+    // Default to popular movies if no query or genre
+    const data = await fetchFromTMDB('/movie/popular', params);
+    results = data.results || [];
   }
 
   return results.slice(0, 20);
