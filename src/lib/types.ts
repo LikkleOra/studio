@@ -21,12 +21,23 @@ export type Participant = {
   vibe: string;
 };
 
-export type TmdbMovie = {
+interface TmdbMedia {
   id: number;
-  title: string;
   overview: string;
   poster_path: string | null;
-  release_date: string;
   vote_average: number;
   genre_ids?: number[];
-};
+  media_type: 'movie' | 'tv';
+}
+
+export interface TmdbMovie extends TmdbMedia {
+  title: string;
+  release_date: string;
+  media_type: 'movie';
+}
+
+export interface TmdbTvShow extends TmdbMedia {
+  name: string;
+  first_air_date: string;
+  media_type: 'tv';
+}

@@ -1,4 +1,4 @@
-import type { Movie, TmdbMovie } from './types';
+import type { TmdbMovie, TmdbTvShow } from './types';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
@@ -19,12 +19,22 @@ const genreMap: { [key: string]: number } = {
     'Mystery': 9648,
     'Romance': 10749,
     'Sci-Fi': 878,
+    'Science Fiction': 878,
     'TV Movie': 10770,
     'Thriller': 53,
     'War': 10752,
     'Western': 37,
-    'Anime': 16, // No specific genre for Anime, often categorized under Animation
+    'Action & Adventure': 10759,
+    'Kids': 10762,
+    'News': 10763,
+    'Reality': 10764,
+    'Soap': 10766,
+    'Talk': 10767,
+    'War & Politics': 10768,
+    'Anime': 16, 
 };
+
+type MediaType = 'movie' | 'tv';
 
 async function fetchFromTMDB(endpoint: string, params: Record<string, string> = {}): Promise<any> {
   if (!TMDB_API_KEY) {
@@ -47,44 +57,74 @@ async function fetchFromTMDB(endpoint: string, params: Record<string, string> = 
   return response.json();
 }
 
-export async function searchMovies(query?: string, genreNames?: string[]): Promise<TmdbMovie[]> {
-  const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
+async function searchMedia(mediaType: MediaType, query?: string, genreNames?: string[]): Promise<(TmdbMovie | TmdbTvShow)[]> {
+    const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
 
-  const params: Record<string, string> = {
-    language: 'en-US',
-    page: '1',
-    include_adult: 'false',
-  };
+    const params: Record<string, string> = {
+        language: 'en-US',
+        page: '1',
+        include_adult: 'false',
+    };
 
-  let results: TmdbMovie[];
+    let results: (TmdbMovie | TmdbTvShow)[];
+    const discoverEndpoint = `/discover/${mediaType}`;
+    const searchEndpoint = `/search/${mediaType}`;
 
-  // Prioritize discover endpoint if genres are selected for better filtering
-  if (genreIds) {
-    params.with_genres = genreIds;
-    if(query) {
-      // Use the query as a keyword search within the discover endpoint
-      params.with_keywords = query; 
+    if (genreIds) {
+        params.with_genres = genreIds;
+        if (query) {
+             const keywordSearch = await fetchFromTMDB('/search/keyword', { query });
+             if (keywordSearch.results && keywordSearch.results.length > 0) {
+                params.with_keywords = keywordSearch.results.map((kw: any) => kw.id).join('|');
+             }
+        }
+        const data = await fetchFromTMDB(discoverEndpoint, params);
+        results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaType }));
+    } else if (query) {
+        params.query = query;
+        const data = await fetchFromTMDB(searchEndpoint, params);
+        results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaType }));
+    } else {
+        const data = await fetchFromTMDB(`/${mediaType}/popular`, params);
+        results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaType }));
     }
-    const data = await fetchFromTMDB('/discover/movie', params);
-    results = data.results || [];
-  } else if (query) {
-    params.query = query;
-    const data = await fetchFromTMDB('/search/movie', params);
-    results = data.results || [];
-  } else {
-    // Default to popular movies if no query or genre
-    const data = await fetchFromTMDB('/movie/popular', params);
-    results = data.results || [];
+
+    return results.slice(0, 20);
+}
+
+export async function searchContent(query?: string, genreNames?: string[], mediaType: 'movie' | 'tv' | 'any' = 'any'): Promise<(TmdbMovie | TmdbTvShow)[]> {
+  let movieResults: (TmdbMovie | TmdbTvShow)[] = [];
+  let tvResults: (TmdbMovie | TmdbTvShow)[] = [];
+
+  if (mediaType === 'movie' || mediaType === 'any') {
+    movieResults = await searchMedia('movie', query, genreNames);
+  }
+  if (mediaType === 'tv' || mediaType === 'any') {
+    tvResults = await searchMedia('tv', query, genreNames);
   }
 
-  return results.slice(0, 20);
+  // In 'any' mode, interleave the results
+  if (mediaType === 'any' && movieResults.length > 0 && tvResults.length > 0) {
+    const combined = [];
+    const minLength = Math.min(movieResults.length, tvResults.length);
+    for (let i = 0; i < minLength; i++) {
+        combined.push(movieResults[i]);
+        combined.push(tvResults[i]);
+    }
+    combined.push(...movieResults.slice(minLength));
+    combined.push(...tvResults.slice(minLength));
+    return combined.slice(0, 20);
+  }
+  
+  return [...movieResults, ...tvResults].slice(0, 20);
 }
 
 
-export async function getRecommendations(movieId: number): Promise<TmdbMovie[]> {
-  const data = await fetchFromTMDB(`/movie/${movieId}/recommendations`, {
+export async function getRecommendations(mediaId: number, mediaType: 'movie' | 'tv'): Promise<(TmdbMovie | TmdbTvShow)[]> {
+  const endpoint = `/${mediaType}/${mediaId}/recommendations`;
+  const data = await fetchFromTMDB(endpoint, {
     language: 'en-US',
     page: '1',
   });
-  return data.results || [];
+  return (data.results || []).map((item: any) => ({ ...item, media_type: mediaType }));
 }

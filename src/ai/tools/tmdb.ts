@@ -1,23 +1,40 @@
 'use server';
 /**
  * @fileoverview This file contains Genkit tools for interacting with The Movie Database (TMDB) API.
- * It exports tools for searching movies and getting movie recommendations.
+ * It exports tools for searching movies/shows and getting recommendations.
  *
- * - searchMoviesTool - A tool to search for movies on TMDB.
- * - getRecommendationsTool - A tool to get movie recommendations from TMDB.
+ * - searchContentTool - A tool to search for movies and TV shows on TMDB.
+ * - getRecommendationsTool - A tool to get movie or TV show recommendations from TMDB.
  */
 
 import { ai } from '@/ai/genkit';
-import { searchMovies, getRecommendations } from '@/lib/tmdb';
+import { searchContent, getRecommendations } from '@/lib/tmdb';
+import type { TmdbMovie, TmdbTvShow } from '@/lib/types';
 import { z } from 'zod';
 
-export const searchMoviesTool = ai.defineTool(
+function transformMedia(media: (TmdbMovie | TmdbTvShow)[] ) {
+  return media.map((item) => {
+    const isMovie = item.media_type === 'movie' || 'title' in item;
+    return {
+      id: item.id,
+      title: isMovie ? (item as TmdbMovie).title : (item as TmdbTvShow).name,
+      overview: item.overview,
+      posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+      releaseDate: isMovie ? (item as TmdbMovie).release_date : (item as TmdbTvShow).first_air_date,
+      rating: item.vote_average,
+      mediaType: item.media_type,
+    };
+  });
+}
+
+export const searchContentTool = ai.defineTool(
   {
-    name: 'searchMovies',
-    description: 'Search for movies on TMDB. Use this to find movies based on a query, genres, or keywords. This is the primary tool to find movies.',
+    name: 'searchContent',
+    description: 'Search for movies or TV shows on TMDB. Use this to find content based on a query, genres, or keywords. This is the primary tool to find content.',
     inputSchema: z.object({
-      query: z.string().optional().describe('The query to search for. Can be a movie title, a person, a company, a keyword, etc.'),
+      query: z.string().optional().describe('The query to search for. Can be a title, a person, a company, a keyword, etc.'),
       genres: z.array(z.string()).optional().describe("A list of genres to filter by. The names of the genres should be used, e.g. 'Action', 'Comedy'"),
+      mediaType: z.enum(['movie', 'tv', 'any']).default('any').describe("The type of media to search for. Can be 'movie', 'tv', or 'any'. Defaults to 'any'."),
     }),
     outputSchema: z.array(z.object({
       id: z.number(),
@@ -26,28 +43,23 @@ export const searchMoviesTool = ai.defineTool(
       posterUrl: z.string().nullable(),
       releaseDate: z.string(),
       rating: z.number(),
+      mediaType: z.string(),
     })),
   },
   async (input) => {
-    console.log(`Searching movies with input: ${JSON.stringify(input)}`);
-    const movies = await searchMovies(input.query, input.genres);
-    return movies.map((movie) => ({
-      id: movie.id,
-      title: movie.title,
-      overview: movie.overview,
-      posterUrl: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null,
-      releaseDate: movie.release_date,
-      rating: movie.vote_average,
-    }));
+    console.log(`Searching content with input: ${JSON.stringify(input)}`);
+    const content = await searchContent(input.query, input.genres, input.mediaType);
+    return transformMedia(content);
   }
 );
 
 export const getRecommendationsTool = ai.defineTool(
   {
     name: 'getRecommendations',
-    description: 'Get movie recommendations based on a movie ID. Use this to find movies similar to a given movie.',
+    description: 'Get recommendations based on a movie or TV show ID. Use this to find content similar to a given item.',
     inputSchema: z.object({
-      movieId: z.number().describe('The ID of the movie to get recommendations for.'),
+      mediaId: z.number().describe('The ID of the movie or TV show to get recommendations for.'),
+      mediaType: z.enum(['movie', 'tv']).describe("The type of media: 'movie' or 'tv'."),
     }),
     outputSchema: z.array(z.object({
       id: z.number(),
@@ -56,18 +68,12 @@ export const getRecommendationsTool = ai.defineTool(
       posterUrl: z.string().nullable(),
       releaseDate: z.string(),
       rating: z.number(),
+      mediaType: z.string(),
     })),
   },
   async (input) => {
-    console.log(`Getting recommendations for movie ID: ${input.movieId}`);
-    const movies = await getRecommendations(input.movieId);
-    return movies.map((movie) => ({
-      id: movie.id,
-      title: movie.title,
-      overview: movie.overview,
-      posterUrl: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null,
-      releaseDate: movie.release_date,
-      rating: movie.vote_average,
-    }));
+    console.log(`Getting recommendations for ${input.mediaType} ID: ${input.mediaId}`);
+    const content = await getRecommendations(input.mediaId, input.mediaType);
+    return transformMedia(content);
   }
 );

@@ -1,15 +1,15 @@
 'use server';
 
 /**
- * @fileOverview Implements the Group Taste Fusion flow, which finds movies that satisfy a group's preferences using AI embeddings.
+ * @fileOverview Implements the Group Taste Fusion flow, which finds movies and TV shows that satisfy a group's preferences.
  *
- * - groupTasteFusion - A function that takes group preferences and returns movie recommendations with match scores and breakdowns.
+ * - groupTasteFusion - A function that takes group preferences and returns recommendations with match scores and breakdowns.
  * - GroupTasteFusionInput - The input type for the groupTasteFusion function.
  * - GroupTasteFusionOutput - The return type for the groupTasteFusion function.
  */
 
 import {ai} from '@/ai/genkit';
-import { searchMoviesTool } from '@/ai/tools/tmdb';
+import { searchContentTool } from '@/ai/tools/tmdb';
 import {z} from 'zod';
 
 const GroupTasteFusionInputSchema = z.object({
@@ -25,13 +25,13 @@ export type GroupTasteFusionInput = z.infer<typeof GroupTasteFusionInputSchema>;
 
 const GroupTasteFusionOutputSchema = z.array(
   z.object({
-    movieId: z.string().describe('The ID of the recommended movie.'),
-    title: z.string().describe('The title of the recommended movie.'),
-    posterUrl: z.string().describe('The URL of the movie poster.'),
-    groupMatchPercentage: z.number().describe('The percentage of how well the movie matches the group preferences.'),
-    whyThisWorks: z.string().describe('A breakdown of why the movie works for the group.'),
+    movieId: z.string().describe('The ID of the recommended movie or show.'),
+    title: z.string().describe('The title of the recommended movie or show.'),
+    posterUrl: z.string().describe('The URL of the poster.'),
+    groupMatchPercentage: z.number().describe('The percentage of how well the item matches the group preferences.'),
+    whyThisWorks: z.string().describe('A breakdown of why the item works for the group.'),
   })
-).describe('An array of movie recommendations with match scores and breakdowns.');
+).describe('An array of recommendations with match scores and breakdowns.');
 
 
 export type GroupTasteFusionOutput = z.infer<typeof GroupTasteFusionOutputSchema>;
@@ -44,12 +44,12 @@ const prompt = ai.definePrompt({
   name: 'groupTasteFusionPrompt',
   input: {schema: GroupTasteFusionInputSchema},
   output: {schema: GroupTasteFusionOutputSchema},
-  tools: [searchMoviesTool],
-  prompt: `You are an AI movie recommendation expert. Given the preferences of a group of people, recommend movies that would satisfy the entire group.
+  tools: [searchContentTool],
+  prompt: `You are an AI recommendation expert for movies and TV shows. Given the preferences of a group of people, recommend content that would satisfy the entire group.
 
-Use the searchMovies tool to find movies that match the combined preferences of the group.
+Use the searchContent tool to find movies and TV shows ('any' media type) that match the combined preferences of the group.
 
-For each movie, calculate a Group Match Percentage indicating how well the movie aligns with the overall group preferences. Also, provide a "Why this works" breakdown explaining why the movie is a good fit for the group, considering their selected moods, genres, and vibe references.
+For each item, calculate a Group Match Percentage indicating how well it aligns with the overall group preferences. Also, provide a "Why this works" breakdown explaining why the item is a good fit for the group, considering their selected moods, genres, and vibe references. Do not recommend an item if it doesn't have a poster.
 
 Group Preferences:
 {{#each participants}}

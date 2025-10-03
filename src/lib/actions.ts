@@ -8,6 +8,7 @@ import { placeholderImages } from './placeholder-images';
 
 const individualSchema = z.object({
   mood: z.string().min(1, 'Mood is required.'),
+  mediaType: z.enum(['movie', 'tv', 'any']),
   vibe: z.string().optional(),
   genres: z.string().optional(),
 });
@@ -18,6 +19,7 @@ export async function findIndividualMovies(
 ): Promise<IndividualMovieState> {
   const validatedFields = individualSchema.safeParse({
     mood: formData.get('mood'),
+    mediaType: formData.get('mediaType'),
     vibe: formData.get('vibe'),
     genres: formData.get('genres'),
   });
@@ -28,12 +30,13 @@ export async function findIndividualMovies(
     };
   }
 
-  const { mood, vibe, genres } = validatedFields.data;
+  const { mood, mediaType, vibe, genres } = validatedFields.data;
   const genreList = genres ? genres.split(',') : [];
 
   const aiInput: SmartMovieBlendingInput = {
     mood,
-    vibe: vibe || 'any movie',
+    mediaType,
+    vibe: vibe || 'any',
     genres: genreList,
   };
 
@@ -41,7 +44,7 @@ export async function findIndividualMovies(
     const movies = await smartMovieBlending(aiInput);
     if (!movies || movies.length === 0) {
       return {
-        error: "We couldn't find any movies for that vibe. Try being a bit more general.",
+        error: "We couldn't find any movies or shows for that vibe. Try being a bit more general.",
       };
     }
     const moviesWithPlaceholders = movies.map((movie, index) => ({

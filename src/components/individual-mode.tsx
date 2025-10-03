@@ -9,11 +9,12 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Flame, Ghost, Heart, Home, Smile, Wand2, LoaderCircle } from 'lucide-react';
+import { Flame, Ghost, Heart, Home, Smile, Wand2, LoaderCircle, Film, Tv } from 'lucide-react';
 import { MovieCard } from './movie-card';
 import { Skeleton } from './ui/skeleton';
 import { Separator } from './ui/separator';
 import type { IndividualMovieState } from '@/lib/types';
+import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 
 const initialState: IndividualMovieState = {};
 
@@ -39,7 +40,7 @@ function SubmitButton() {
       ) : (
         <>
           <Wand2 className="mr-2 h-5 w-5" />
-          Find Movies
+          Find My Vibe
         </>
       )}
     </Button>
@@ -77,7 +78,7 @@ export default function IndividualMode() {
           <form action={formAction} className="space-y-6">
             <div className="space-y-2">
               <Label className="text-lg font-semibold">1. Pick Your Mood</Label>
-              <RadioGroup name="mood" className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-2" required>
+              <RadioGroup defaultValue='Chill' name="mood" className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-2" required>
                 {moods.map(({ value, label, icon: Icon }) => (
                   <div key={value}>
                     <RadioGroupItem value={value} id={`mood-${value}`} className="sr-only" />
@@ -95,8 +96,33 @@ export default function IndividualMode() {
 
             <Separator />
 
+             <div className="space-y-4">
+              <Label className="text-lg font-semibold">2. Choose Media Type</Label>
+              <RadioGroup defaultValue="movie" name="mediaType" className="grid grid-cols-3 gap-4 pt-2">
+                <RadioGroupItem value="movie" id="type-movie" className="sr-only" />
+                <Label htmlFor="type-movie" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer [&:has([data-state=checked])]:border-primary">
+                    <Film className="mb-2 h-7 w-7" />
+                    Movies
+                </Label>
+
+                <RadioGroupItem value="tv" id="type-tv" className="sr-only" />
+                <Label htmlFor="type-tv" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer [&:has([data-state=checked])]:border-primary">
+                    <Tv className="mb-2 h-7 w-7" />
+                    TV Shows
+                </Label>
+
+                <RadioGroupItem value="any" id="type-any" className="sr-only" />
+                 <Label htmlFor="type-any" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer [&:has([data-state=checked])]:border-primary">
+                    <Wand2 className="mb-2 h-7 w-7" />
+                    Any
+                </Label>
+              </RadioGroup>
+            </div>
+
+            <Separator />
+
             <div className="space-y-4">
-              <Label htmlFor="vibe" className="text-lg font-semibold">2. Match The Vibe (Optional)</Label>
+              <Label htmlFor="vibe" className="text-lg font-semibold">3. Match The Vibe (Optional)</Label>
               <Input
                 id="vibe"
                 name="vibe"
@@ -108,7 +134,7 @@ export default function IndividualMode() {
             <Separator />
             
             <div className="space-y-4">
-              <Label className="text-lg font-semibold">3. Filter by Genre (Optional)</Label>
+              <Label className="text-lg font-semibold">4. Filter by Genre (Optional)</Label>
               <input type="hidden" name="genres" value={selectedGenres.join(',')} />
               <div className="flex flex-wrap gap-2">
                 {allGenres.map((genre) => (
