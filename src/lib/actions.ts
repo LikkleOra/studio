@@ -31,7 +31,7 @@ export async function findIndividualMovies(
   }
 
   const { mood, mediaType, vibe, genres } = validatedFields.data;
-  const genreList = genres ? genres.split(',') : [];
+  const genreList = genres ? genres.split(',').filter(g => g) : [];
 
   const aiInput: SmartMovieBlendingInput = {
     mood,
@@ -52,8 +52,11 @@ export async function findIndividualMovies(
       posterUrl: movie.posterUrl || placeholderImages[index % placeholderImages.length].imageUrl,
     }));
     return { movies: moviesWithPlaceholders };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
+    if (error.message.includes('TMDB_API_KEY')) {
+        return { error: 'The TMDB API key is not configured. Please add it to your environment variables.' };
+    }
     return {
       error: 'An AI error occurred. Please try again later.',
     };
@@ -103,8 +106,11 @@ export async function findGroupMovies(
     
     return { movies };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
+    if (error.message.includes('TMDB_API_KEY')) {
+        return { error: 'The TMDB API key is not configured. Please add it to your environment variables.' };
+    }
     return {
       error: 'An AI error occurred or participant data was malformed. Please try again.',
     };
