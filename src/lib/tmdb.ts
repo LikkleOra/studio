@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import type { TmdbMovie, TmdbTvShow } from './types';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
@@ -47,68 +48,68 @@ async function fetchFromTMDB(endpoint: string, params: Record<string, string> = 
     if (value) url.searchParams.append(key, value);
   });
 
-  try {
-    const response = await fetch(url.toString());
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({ status_message: response.statusText }));
-      console.error(`TMDB API error: ${response.status} ${response.statusText}`, errorBody);
-      throw new Error(`Failed to fetch from TMDB: ${errorBody.status_message || response.statusText}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Network or fetch error:', error);
-    // Re-throw the error to be handled by the caller
-    throw error;
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({ status_message: response.statusText }));
+    console.error(`TMDB API error: ${response.status} ${response.statusText}`, errorBody);
+    throw new Error(`Failed to fetch from TMDB: ${errorBody.status_message || response.statusText}`);
   }
+  return await response.json();
 }
 
 export async function searchContent(query?: string, genreNames?: string[], mediaType: 'movie' | 'tv' | 'any' = 'any'): Promise<(TmdbMovie | TmdbTvShow)[]> {
-    const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
+  const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
 
-    const params: Record<string, string> = {
-        language: 'en-US',
-        page: '1',
-        include_adult: 'false',
-    };
+  const params: Record<string, string> = {
+    language: 'en-US',
+    page: '1',
+    include_adult: 'false',
+  };
 
-    let results: (TmdbMovie | TmdbTvShow)[] = [];
+  let results: (TmdbMovie | TmdbTvShow)[] = [];
 
-    // Prioritize genre-based discovery if genres are provided
-    if (genreIds) {
-        params.with_genres = genreIds;
-        if (query) {
-            // Use query for keyword filtering within discovery
-            const keywordSearch = await fetchFromTMDB('/search/keyword', { query });
-            if (keywordSearch.results?.length > 0) {
-                params.with_keywords = keywordSearch.results.map((kw: any) => kw.id).join('|');
-            }
-        }
-        
-        const mediaToDiscover: MediaType[] = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
-        
-        for (const type of mediaToDiscover) {
-            const discoverEndpoint = `/discover/${type}`;
-            const data = await fetchFromTMDB(discoverEndpoint, params);
-            results.push(...(data.results || []).map((item: any) => ({ ...item, media_type: type })));
-        }
-
-    } else if (query) {
-        // Fallback to general search if no genres are specified
-        params.query = query;
-        const endpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
-        const data = await fetchFromTMDB(endpoint, params);
-        results = data.results || [];
-    } else {
-        // As a last resort, get popular items if no query or genres
-        const endpoint = mediaType === 'any' ? '/movie/popular' : `/${mediaType}/popular`; // multi doesn't support popular
-        const data = await fetchFromTMDB(endpoint, params);
-        results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaType === 'any' ? 'movie' : mediaType }));
+  // Prioritize genre-based discovery if genres are provided
+  if (genreIds) {
+    params.with_genres = genreIds;
+    if (query) {
+      // Use query for keyword filtering within discovery
+      const keywordSearch = await fetchFromTMDB('/search/keyword', { query });
+      if (keywordSearch.results?.length > 0) {
+        params.with_keywords = keywordSearch.results.map((kw: any) => kw.id).join('|');
+      }
+    }
+    
+    const mediaToDiscover: MediaType[] = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
+    
+    for (const type of mediaToDiscover) {
+      const discoverEndpoint = `/discover/${type}`;
+      try {
+        const data = await fetchFromTMDB(discoverEndpoint, params);
+        results.push(...(data.results || []).map((item: any) => ({ ...item, media_type: type })));
+      } catch (error) {
+        console.error(`Error discovering ${type} with genres:`, error);
+      }
     }
 
-    // Sort by popularity and take the top 20
-    return results
-      .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
-      .slice(0, 20);
+  } else if (query) {
+    // Fallback to general search if no genres are specified
+    params.query = query;
+    const endpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
+    const data = await fetchFromTMDB(endpoint, params);
+    results = data.results || [];
+  } else {
+    // As a last resort, get popular items if no query or genres
+    const mediaToFetch = mediaType === 'any' ? 'movie' : mediaType;
+    const endpoint = `/${mediaToFetch}/popular`;
+    const data = await fetchFromTMDB(endpoint, params);
+    results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaToFetch }));
+  }
+
+  // Sort by popularity and take the top 20
+  return results
+    .filter(item => item.poster_path) // Ensure item has a poster
+    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
+    .slice(0, 20);
 }
 
 
