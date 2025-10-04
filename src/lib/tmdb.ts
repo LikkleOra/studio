@@ -34,7 +34,7 @@ const genreMap: { [key: string]: number } = {
     'Anime': 16, 
 };
 
-type MediaType = 'movie' | 'tv';
+type MediaType = 'movie' | 'tv' | 'any';
 
 async function fetchFromTMDB(endpoint: string, params: Record<string, string> = {}): Promise<any> {
   if (!TMDB_API_KEY) {
@@ -47,17 +47,22 @@ async function fetchFromTMDB(endpoint: string, params: Record<string, string> = 
     if (value) url.searchParams.append(key, value);
   });
 
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    console.error(`TMDB API error: ${response.status} ${response.statusText}`);
-    const errorBody = await response.json();
-    console.error('Error details:', errorBody);
-    throw new Error(`Failed to fetch from TMDB: ${errorBody.status_message || response.statusText}`);
+  try {
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({ status_message: response.statusText }));
+      console.error(`TMDB API error: ${response.status} ${response.statusText}`, errorBody);
+      throw new Error(`Failed to fetch from TMDB: ${errorBody.status_message || response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Network or fetch error:', error);
+    // Re-throw the error to be handled by the caller
+    throw error;
   }
-  return response.json();
 }
 
-async function searchMedia(mediaType: MediaType, query?: string, genreNames?: string[]): Promise<(TmdbMovie | TmdbTvShow)[]> {
+export async function searchContent(query?: string, genreNames?: string[], mediaType: 'movie' | 'tv' | 'any' = 'any'): Promise<(TmdbMovie | TmdbTvShow)[]> {
     const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
 
     const params: Record<string, string> = {
@@ -66,57 +71,44 @@ async function searchMedia(mediaType: MediaType, query?: string, genreNames?: st
         include_adult: 'false',
     };
 
-    let results: (TmdbMovie | TmdbTvShow)[];
-    const discoverEndpoint = `/discover/${mediaType}`;
-    const searchEndpoint = `/search/${mediaType}`;
+    let results: (TmdbMovie | TmdbTvShow)[] = [];
 
+    // Prioritize genre-based discovery if genres are provided
     if (genreIds) {
         params.with_genres = genreIds;
         if (query) {
-             const keywordSearch = await fetchFromTMDB('/search/keyword', { query });
-             if (keywordSearch.results && keywordSearch.results.length > 0) {
+            // Use query for keyword filtering within discovery
+            const keywordSearch = await fetchFromTMDB('/search/keyword', { query });
+            if (keywordSearch.results?.length > 0) {
                 params.with_keywords = keywordSearch.results.map((kw: any) => kw.id).join('|');
-             }
+            }
         }
-        const data = await fetchFromTMDB(discoverEndpoint, params);
-        results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaType }));
+        
+        const mediaToDiscover: MediaType[] = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
+        
+        for (const type of mediaToDiscover) {
+            const discoverEndpoint = `/discover/${type}`;
+            const data = await fetchFromTMDB(discoverEndpoint, params);
+            results.push(...(data.results || []).map((item: any) => ({ ...item, media_type: type })));
+        }
+
     } else if (query) {
+        // Fallback to general search if no genres are specified
         params.query = query;
-        const data = await fetchFromTMDB(searchEndpoint, params);
-        results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaType }));
+        const endpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
+        const data = await fetchFromTMDB(endpoint, params);
+        results = data.results || [];
     } else {
-        const data = await fetchFromTMDB(`/${mediaType}/popular`, params);
-        results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaType }));
+        // As a last resort, get popular items if no query or genres
+        const endpoint = mediaType === 'any' ? '/movie/popular' : `/${mediaType}/popular`; // multi doesn't support popular
+        const data = await fetchFromTMDB(endpoint, params);
+        results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaType === 'any' ? 'movie' : mediaType }));
     }
 
-    return results.slice(0, 20);
-}
-
-export async function searchContent(query?: string, genreNames?: string[], mediaType: 'movie' | 'tv' | 'any' = 'any'): Promise<(TmdbMovie | TmdbTvShow)[]> {
-  let movieResults: (TmdbMovie | TmdbTvShow)[] = [];
-  let tvResults: (TmdbMovie | TmdbTvShow)[] = [];
-
-  if (mediaType === 'movie' || mediaType === 'any') {
-    movieResults = await searchMedia('movie', query, genreNames);
-  }
-  if (mediaType === 'tv' || mediaType === 'any') {
-    tvResults = await searchMedia('tv', query, genreNames);
-  }
-
-  // In 'any' mode, interleave the results
-  if (mediaType === 'any' && movieResults.length > 0 && tvResults.length > 0) {
-    const combined = [];
-    const minLength = Math.min(movieResults.length, tvResults.length);
-    for (let i = 0; i < minLength; i++) {
-        combined.push(movieResults[i]);
-        combined.push(tvResults[i]);
-    }
-    combined.push(...movieResults.slice(minLength));
-    combined.push(...tvResults.slice(minLength));
-    return combined.slice(0, 20);
-  }
-  
-  return [...movieResults, ...tvResults].slice(0, 20);
+    // Sort by popularity and take the top 20
+    return results
+      .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
+      .slice(0, 20);
 }
 
 
