@@ -1,7 +1,5 @@
-import 'dotenv/config';
 import type { TmdbMovie, TmdbTvShow } from './types';
 
-const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
 
 const genreMap: { [key: string]: number } = {
@@ -38,7 +36,9 @@ const genreMap: { [key: string]: number } = {
 type MediaType = 'movie' | 'tv' | 'any';
 
 async function fetchFromTMDB(endpoint: string, params: Record<string, string> = {}): Promise<any> {
+  const TMDB_API_KEY = process.env.TMDB_API_KEY;
   if (!TMDB_API_KEY) {
+    console.error('TMDB_API_KEY is not configured in the environment.');
     throw new Error('TMDB_API_KEY is not configured in the environment.');
   }
 
@@ -99,7 +99,7 @@ export async function searchContent(query?: string, genreNames?: string[], media
     results = data.results || [];
   } else {
     // As a last resort, get popular items if no query or genres
-    const mediaToFetch = mediaType === 'any' ? 'movie' : mediaType;
+    const mediaToFetch = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
     const endpoint = `/${mediaToFetch}/popular`;
     const data = await fetchFromTMDB(endpoint, params);
     results = (data.results || []).map((item: any) => ({ ...item, media_type: mediaToFetch }));
