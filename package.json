@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
-    "build": "NODE_ENV=production next build",
+    "build": "dotenv -e .env.local -- NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
@@ -60,6 +60,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "dotenv-cli": "^7.4.2",
     "genkit-cli": "^1.20.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
