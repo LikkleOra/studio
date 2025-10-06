@@ -68,11 +68,11 @@ export async function searchContent(query?: string, genreNames?: string[], media
 
   let results: (TmdbMovie | TmdbTvShow)[] = [];
 
+  // Prioritize genre-based discovery if genres are provided
   if (genreIds) {
     params.with_genres = genreIds;
-    if (query) {
-        params.query = query;
-    }
+    // You can optionally add the query to the discover call, but it's often better for broader searches
+    // For simplicity and effectiveness, we'll focus on genres for discovery
     
     const mediaToDiscover: MediaType[] = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
     
@@ -83,22 +83,22 @@ export async function searchContent(query?: string, genreNames?: string[], media
         results.push(...(data.results || []).map((item: any) => ({ ...item, media_type: type })));
       } catch (error) {
         console.error(`Error discovering ${type} with genres:`, error);
+        // Don't re-throw; allow the function to continue if one type fails
       }
     }
-
+  // Fallback to keyword search if no genres are provided but a query is
   } else if (query) {
     params.query = query;
     const endpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
     const data = await fetchFromTMDB(endpoint, params);
     results = (data.results || []).filter((r: any) => mediaType === 'any' ? ['movie', 'tv'].includes(r.media_type) : r.media_type === mediaType);
-  } else {
-    results = [];
   }
+  // If no query and no genres, results will be an empty array
 
   return results
-    .filter(item => item.poster_path)
-    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
-    .slice(0, 20);
+    .filter(item => item.poster_path) // Ensure item has a poster
+    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0)) // Sort by rating
+    .slice(0, 20); // Limit to top 20
 }
 
 

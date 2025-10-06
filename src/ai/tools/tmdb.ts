@@ -46,10 +46,16 @@ export const searchContentTool = ai.defineTool(
       mediaType: z.string(),
     })),
   },
-  async (input) => {
-    console.log(`Searching content with input: ${JSON.stringify(input)}`);
-    const content = await searchContent(input.query, input.genres, input.mediaType);
-    return transformMedia(content);
+  async ({ query, genres, mediaType }) => {
+    console.log(`Searching content with input: ${JSON.stringify({ query, genres, mediaType })}`);
+    try {
+      const content = await searchContent(query, genres, mediaType);
+      return transformMedia(content);
+    } catch (error) {
+      console.error('Error fetching content from TMDB:', error);
+      // Return an empty array to prevent the AI flow from crashing.
+      return [];
+    }
   }
 );
 
@@ -71,9 +77,14 @@ export const getRecommendationsTool = ai.defineTool(
       mediaType: z.string(),
     })),
   },
-  async (input) => {
-    console.log(`Getting recommendations for ${input.mediaType} ID: ${input.mediaId}`);
-    const content = await getRecommendations(input.mediaId, input.mediaType);
-    return transformMedia(content);
+  async ({ mediaId, mediaType }) => {
+    console.log(`Getting recommendations for ${mediaType} ID: ${mediaId}`);
+    try {
+      const content = await getRecommendations(mediaId, mediaType);
+      return transformMedia(content);
+    } catch (error) {
+      console.error('Error fetching recommendations from TMDB:', error);
+      return [];
+    }
   }
 );
