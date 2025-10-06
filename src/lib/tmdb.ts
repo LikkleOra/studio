@@ -1,4 +1,5 @@
 import type { TmdbMovie, TmdbTvShow } from './types';
+import 'dotenv/config';
 
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
 
@@ -58,8 +59,6 @@ async function fetchFromTMDB(endpoint: string, params: Record<string, string> = 
 }
 
 export async function searchContent(query?: string, genreNames?: string[], mediaType: 'movie' | 'tv' | 'any' = 'any'): Promise<(TmdbMovie | TmdbTvShow)[]> {
-  const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
-
   const params: Record<string, string> = {
     language: 'en-US',
     page: '1',
@@ -67,12 +66,18 @@ export async function searchContent(query?: string, genreNames?: string[], media
   };
 
   let results: (TmdbMovie | TmdbTvShow)[] = [];
-
-  // Prioritize genre-based discovery if genres are provided
-  if (genreIds) {
-    params.with_genres = genreIds;
-    // You can optionally add the query to the discover call, but it's often better for broader searches
-    // For simplicity and effectiveness, we'll focus on genres for discovery
+  const hasGenres = genreNames && genreNames.length > 0;
+  
+  // Path 1: Prioritize genre-based discovery if genres are provided.
+  if (hasGenres) {
+    const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
+    if (genreIds) {
+        params.with_genres = genreIds;
+    }
+    // You can optionally add the query to filter down the discovered items, TMDB supports this
+    if (query) {
+        params.query = query;
+    }
     
     const mediaToDiscover: MediaType[] = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
     
@@ -83,22 +88,25 @@ export async function searchContent(query?: string, genreNames?: string[], media
         results.push(...(data.results || []).map((item: any) => ({ ...item, media_type: type })));
       } catch (error) {
         console.error(`Error discovering ${type} with genres:`, error);
-        // Don't re-throw; allow the function to continue if one type fails
+        // Do not re-throw; allow the function to continue if one type fails
       }
     }
-  // Fallback to keyword search if no genres are provided but a query is
+  // Path 2: Fallback to keyword-based search if no genres are provided but a query is.
   } else if (query) {
     params.query = query;
     const endpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
     const data = await fetchFromTMDB(endpoint, params);
-    results = (data.results || []).filter((r: any) => mediaType === 'any' ? ['movie', 'tv'].includes(r.media_type) : r.media_type === mediaType);
+    results = (data.results || []).filter((r: any) => {
+        if (mediaType === 'any') return ['movie', 'tv'].includes(r.media_type);
+        return r.media_type === mediaType;
+    });
   }
-  // If no query and no genres, results will be an empty array
+  // If no query and no genres, results will be an empty array.
 
   return results
-    .filter(item => item.poster_path) // Ensure item has a poster
-    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0)) // Sort by rating
-    .slice(0, 20); // Limit to top 20
+    .filter(item => item.poster_path) // Ensure item has a poster.
+    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0)) // Sort by rating.
+    .slice(0, 20); // Limit to top 20.
 }
 
 

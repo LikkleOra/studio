@@ -49,11 +49,12 @@ export const searchContentTool = ai.defineTool(
   async ({ query, genres, mediaType }) => {
     console.log(`Searching content with input: ${JSON.stringify({ query, genres, mediaType })}`);
     try {
+      // Call the refactored searchContent function with individual arguments.
       const content = await searchContent(query, genres, mediaType);
       return transformMedia(content);
     } catch (error) {
-      console.error('Error fetching content from TMDB:', error);
-      // Return an empty array to prevent the AI flow from crashing.
+      console.error('Error in searchContentTool:', error);
+      // Gracefully return an empty array to prevent the AI flow from crashing.
       return [];
     }
   }
