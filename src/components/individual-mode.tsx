@@ -15,6 +15,7 @@ import { Skeleton } from './ui/skeleton';
 import { Separator } from './ui/separator';
 import type { IndividualMovieState } from '@/lib/types';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 const initialState: IndividualMovieState = {};
 
@@ -168,18 +169,20 @@ function Results({ movies }: { movies?: IndividualMovieState['movies'] }) {
 
     if (pending) {
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <Card key={i}>
-                        <CardContent className="p-0">
-                            <Skeleton className="h-[300px] w-full" />
-                        </CardContent>
-                        <CardHeader>
-                            <Skeleton className="h-6 w-3/4" />
-                            <Skeleton className="h-4 w-1/2" />
-                        </CardHeader>
-                    </Card>
-                ))}
+            <div className="w-full max-w-6xl mx-auto px-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <Card key={i}>
+                            <CardContent className="p-0">
+                                <Skeleton className="h-[300px] w-full" />
+                            </CardContent>
+                            <CardHeader>
+                                <Skeleton className="h-6 w-3/4" />
+                                <Skeleton className="h-4 w-1/2" />
+                            </CardHeader>
+                        </Card>
+                    ))}
+                </div>
             </div>
         );
     }
@@ -189,10 +192,22 @@ function Results({ movies }: { movies?: IndividualMovieState['movies'] }) {
     }
     
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 animate-in fade-in-50">
-            {movies.map((movie, index) => (
-                <MovieCard key={`${movie.title}-${index}`} movie={movie} index={index} />
-            ))}
-        </div>
+        <Carousel
+            opts={{
+                align: "start",
+                loop: true,
+            }}
+            className="w-full max-w-6xl mx-auto"
+        >
+            <CarouselContent className="-ml-4">
+                {movies.map((movie, index) => (
+                    <CarouselItem key={`${movie.title}-${index}`} className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                        <MovieCard movie={movie} index={index} />
+                    </CarouselItem>
+                ))}
+            </CarouselContent>
+            <CarouselPrevious className="ml-12" />
+            <CarouselNext className="mr-12" />
+        </Carousel>
     );
 }

@@ -13,6 +13,7 @@ import { GroupMovieCard } from './group-movie-card';
 import { Skeleton } from './ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import type { Participant, GroupMovieState } from '@/lib/types';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 const initialState: GroupMovieState = {};
 
@@ -198,19 +199,21 @@ function Results({ movies }: { movies?: GroupMovieState['movies'] }) {
 
     if (pending) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 3 }).map((_, i) => (
-                    <Card key={i}>
-                        <CardContent className="p-0">
-                            <Skeleton className="h-[450px] w-full" />
-                        </CardContent>
-                        <CardHeader>
-                            <Skeleton className="h-6 w-3/4" />
-                            <Skeleton className="h-4 w-1/2 mt-2" />
-                            <Skeleton className="h-4 w-full mt-1" />
-                        </CardHeader>
-                    </Card>
-                ))}
+            <div className="w-full max-w-6xl mx-auto px-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <Card key={i}>
+                            <CardContent className="p-0">
+                                <Skeleton className="h-[450px] w-full" />
+                            </CardContent>
+                            <CardHeader>
+                                <Skeleton className="h-6 w-3/4" />
+                                <Skeleton className="h-4 w-1/2 mt-2" />
+                                <Skeleton className="h-4 w-full mt-1" />
+                            </CardHeader>
+                        </Card>
+                    ))}
+                </div>
             </div>
         );
     }
@@ -220,10 +223,22 @@ function Results({ movies }: { movies?: GroupMovieState['movies'] }) {
     }
     
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in-50">
-            {movies.map((movie, index) => (
-                <GroupMovieCard key={`${movie.title}-${index}`} movie={movie} />
-            ))}
-        </div>
+        <Carousel
+            opts={{
+                align: "start",
+                loop: true,
+            }}
+            className="w-full max-w-6xl mx-auto"
+        >
+            <CarouselContent className="-ml-4">
+                {movies.map((movie, index) => (
+                    <CarouselItem key={`${movie.title}-${index}`} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                        <GroupMovieCard movie={movie} />
+                    </CarouselItem>
+                ))}
+            </CarouselContent>
+            <CarouselPrevious className="ml-12" />
+            <CarouselNext className="mr-12" />
+        </Carousel>
     );
 }
