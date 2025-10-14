@@ -41,3 +41,31 @@ export interface TmdbTvShow extends TmdbMedia {
   first_air_date: string;
   media_type: 'tv';
 }
+
+export type Provider = {
+    name: string;
+    logoUrl: string;
+    link: string;
+};
+
+export interface MovieInfo {
+    id: number;
+    title?: string;
+    name?: string;
+    overview: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
+    vote_average: number;
+    release_date?: string;
+    first_air_date?: string;
+    genres: { id: number; name: string }[];
+    videos?: {
+        results: {
+            key: string;
+            site: string;
+            type: string;
+        }[];
+    };
+    trailerKey?: string;
+    watchProviders?: Provider[];
+}

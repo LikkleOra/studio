@@ -2,8 +2,9 @@
 
 import { smartMovieBlending, SmartMovieBlendingInput } from '@/ai/flows/smart-movie-blending';
 import { groupTasteFusion, GroupTasteFusionInput } from '@/ai/flows/group-taste-fusion';
+import { getMediaDetails, getWatchProviderLinks } from '@/lib/tmdb';
 import { z } from 'zod';
-import type { IndividualMovieState, GroupMovieState } from './types';
+import type { IndividualMovieState, GroupMovieState, MovieInfo } from './types';
 import { placeholderImages } from './placeholder-images';
 
 const individualSchema = z.object({
@@ -115,4 +116,34 @@ export async function findGroupMovies(
       error: 'An AI error occurred or participant data was malformed. Please try again.',
     };
   }
+}
+
+const detailsSchema = z.object({
+    mediaId: z.coerce.number(),
+    mediaType: z.enum(['movie', 'tv']),
+});
+
+export async function getMovieDetails(mediaId: number, mediaType: 'movie' | 'tv'): Promise<MovieInfo | { error: string }> {
+    const validated = detailsSchema.safeParse({ mediaId, mediaType });
+    if (!validated.success) {
+        return { error: 'Invalid media ID or type.' };
+    }
+    
+    try {
+        const details = await getMediaDetails(mediaId, mediaType);
+        const providers = await getWatchProviderLinks(mediaId, mediaType);
+
+        const trailer = details.videos?.results?.find(
+            (v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')
+        );
+
+        return {
+            ...details,
+            trailerKey: trailer?.key,
+            watchProviders: providers,
+        };
+    } catch (error: any) {
+        console.error('Error getting movie details:', error);
+        return { error: 'Failed to fetch movie details.' };
+    }
 }

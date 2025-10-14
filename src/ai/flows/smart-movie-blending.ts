@@ -22,6 +22,8 @@ export type SmartMovieBlendingInput = z.infer<typeof SmartMovieBlendingInputSche
 
 const SmartMovieBlendingOutputSchema = z.array(
   z.object({
+    mediaId: z.number().describe('The ID of the recommended movie or show.'),
+    mediaType: z.enum(['movie', 'tv']).describe("The type of media ('movie' or 'tv')."),
     title: z.string().describe('The title of the movie or show.'),
     confidenceScore: z.number().describe('A score indicating how well the content matches the input criteria.'),
     reason: z.string().describe('Explanation of why this content works, including genre and mood.'),
@@ -43,8 +45,9 @@ const prompt = ai.definePrompt({
   prompt: `You are a movie and TV show recommendation expert. 
   1. Use the searchContent tool to find 5-10 items that match the user's criteria.
   2. For each item found, use the getWatchProviders tool to see where it is streaming in the US.
-  3. For each recommended item, provide a confidence score, a brief reason for the recommendation, and the list of watch providers. 
-  4. Do not recommend an item if it does not have a poster.
+  3. For each recommended item, provide a confidence score, a brief reason for the recommendation, and the list of watch providers.
+  4. Ensure you return the mediaId and mediaType for each recommendation.
+  5. Do not recommend an item if it does not have a poster.
 
 The user's criteria are:
 Mood: {{{mood}}}

@@ -26,6 +26,7 @@ export type GroupTasteFusionInput = z.infer<typeof GroupTasteFusionInputSchema>;
 const GroupTasteFusionOutputSchema = z.array(
   z.object({
     movieId: z.number().describe('The ID of the recommended movie or show.'),
+    mediaType: z.enum(['movie', 'tv']).describe("The type of media ('movie' or 'tv')."),
     title: z.string().describe('The title of the recommended movie or show.'),
     posterUrl: z.string().describe('The URL of the poster.'),
     groupMatchPercentage: z.number().describe('The percentage of how well the item matches the group preferences.'),
@@ -53,7 +54,8 @@ const prompt = ai.definePrompt({
 3.  For each potential recommendation, use the \`getWatchProviders\` tool to get the list of streaming services.
 4.  For each potential recommendation, calculate a 'Group Match Percentage' indicating how well it aligns with the overall group preferences.
 5.  Provide a "Why this works" breakdown explaining why the item is a good fit, considering the different tastes within the group.
-6.  Do not recommend any item that does not have a poster URL.
+6.  Ensure you return the movieId (which is the 'id' from the tool) and mediaType for each recommendation.
+7.  Do not recommend any item that does not have a poster URL.
 
 Group Preferences:
 {{#each participants}}

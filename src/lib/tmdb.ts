@@ -1,4 +1,4 @@
-import type { TmdbMovie, TmdbTvShow } from './types';
+import type { TmdbMovie, TmdbTvShow, MovieInfo, Provider } from './types';
 
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
 
@@ -124,4 +124,28 @@ export async function getWatchProviders(mediaId: number, mediaType: 'movie' | 't
         return [];
     }
     return providers.map((p: any) => p.provider_name).slice(0, 3); // Return top 3 streaming providers
+}
+
+export async function getMediaDetails(mediaId: number, mediaType: 'movie' | 'tv'): Promise<MovieInfo> {
+  const endpoint = `/${mediaType}/${mediaId}`;
+  const data = await fetchFromTMDB(endpoint, {
+    append_to_response: 'videos',
+  });
+  return data;
+}
+
+export async function getWatchProviderLinks(mediaId: number, mediaType: 'movie' | 'tv'): Promise<Provider[]> {
+    const endpoint = `/${mediaType}/${mediaId}/watch/providers`;
+    const data = await fetchFromTMDB(endpoint);
+    const providers = data.results?.US?.flatrate;
+    if (!providers || providers.length === 0) {
+        return [];
+    }
+    // TMDB doesn't provide direct links, so we'll provide a search link.
+    const justWatchUrl = `https://www.justwatch.com/us/search?q=`;
+    return providers.map((p: any) => ({
+        name: p.provider_name,
+        logoUrl: `https://image.tmdb.org/t/p/w200${p.logo_path}`,
+        link: `${justWatchUrl}${encodeURIComponent(mediaType === 'movie' ? data.title : data.name)}`,
+    })).slice(0, 4);
 }
