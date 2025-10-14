@@ -53,6 +53,7 @@ export const searchContentTool = ai.defineTool(
       return transformMedia(content);
     } catch (error) {
       console.error('Error in searchContentTool:', error);
+      // Return an empty array to the flow in case of an error. The AI can then handle it gracefully.
       return [];
     }
   }

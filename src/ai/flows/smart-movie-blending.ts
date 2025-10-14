@@ -44,10 +44,11 @@ const prompt = ai.definePrompt({
   tools: [searchContentTool, getRecommendationsTool, getWatchProvidersTool],
   prompt: `You are a movie and TV show recommendation expert. 
   1. Use the searchContent tool to find 5-10 items that match the user's criteria.
-  2. For each item found, use the getWatchProviders tool to see where it is streaming in the US.
-  3. For each recommended item, provide a confidence score, a brief reason for the recommendation, and the list of watch providers.
-  4. Ensure you return the mediaId and mediaType for each recommendation.
-  5. Do not recommend an item if it does not have a poster.
+  2. If the tool returns no results, you MUST inform the user that nothing was found and suggest they try a different query. Do not invent results.
+  3. For each item found, use the getWatchProviders tool to see where it is streaming in the US.
+  4. For each recommended item, provide a confidence score, a brief reason for the recommendation, and the list of watch providers.
+  5. Ensure you return the mediaId and mediaType for each recommendation.
+  6. Do not recommend an item if it does not have a poster.
 
 The user's criteria are:
 Mood: {{{mood}}}

@@ -66,7 +66,7 @@ export async function searchContent(query?: string, genreNames?: string[], media
 
   let results: (TmdbMovie | TmdbTvShow)[] = [];
   
-  if (query) {
+  if (query && typeof query === 'string' && query.trim().length > 0) {
     params.query = query;
     const searchEndpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
     const data = await fetchFromTMDB(searchEndpoint, params);
