@@ -65,15 +65,21 @@ export async function searchContent(query?: string, genreNames?: string[], media
   };
 
   let results: (TmdbMovie | TmdbTvShow)[] = [];
-  const hasGenres = genreNames && genreNames.length > 0;
   
-  if (hasGenres) {
-    const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
+  if (query) {
+    params.query = query;
+    const searchEndpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
+    const data = await fetchFromTMDB(searchEndpoint, params);
+    results = (data.results || []).filter((r: any) => {
+      const type = r.media_type;
+      if (!type || !['movie', 'tv'].includes(type)) return false;
+      if (mediaType !== 'any' && type !== mediaType) return false;
+      return true;
+    });
+  } else if (genreNames && genreNames.length > 0) {
+    const genreIds = genreNames.map(name => genreMap[name]).filter(Boolean).join(',');
     if (genreIds) {
         params.with_genres = genreIds;
-    }
-    if (query) {
-        params.query = query;
     }
     
     const mediaToDiscover: MediaType[] = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
@@ -87,17 +93,6 @@ export async function searchContent(query?: string, genreNames?: string[], media
         console.error(`Error discovering ${type} with genres:`, error);
       }
     }
-  } else if (query) {
-    params.query = query;
-    const searchEndpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
-
-    const data = await fetchFromTMDB(searchEndpoint, params);
-    results = (data.results || []).filter((r: any) => {
-      const type = r.media_type;
-      if (!type || !['movie', 'tv'].includes(type)) return false;
-      if (mediaType !== 'any' && type !== mediaType) return false;
-      return true;
-    });
   }
 
   return results
