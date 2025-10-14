@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import type { GroupMovieRecommendation } from '@/lib/types';
-import { Users } from 'lucide-react';
+import { Users, Tv } from 'lucide-react';
 import { placeholderImages } from '@/lib/placeholder-images';
 
 type GroupMovieCardProps = {
@@ -27,11 +27,26 @@ export function GroupMovieCard({ movie }: GroupMovieCardProps) {
           data-ai-hint="movie poster"
         />
       </CardContent>
-      <CardHeader className="flex-grow">
+      <CardHeader className="flex-grow pb-3">
         <CardTitle className="text-lg font-headline">{movie.title}</CardTitle>
         <CardDescription className="text-xs pt-1 line-clamp-4">{movie.whyThisWorks}</CardDescription>
       </CardHeader>
-      <CardFooter className="flex flex-col items-start gap-2">
+      <CardFooter className="flex flex-col items-start gap-4">
+        {movie.watchProviders && movie.watchProviders.length > 0 && (
+            <div className="w-full">
+                <div className='flex items-center gap-2 mb-1'>
+                    <Tv className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs font-semibold text-muted-foreground">Available on:</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                    {movie.watchProviders.map((provider) => (
+                    <Badge key={provider} variant="outline">
+                        {provider}
+                    </Badge>
+                    ))}
+                </div>
+            </div>
+        )}
          <div className='w-full'>
             <div className='flex justify-between items-center mb-1'>
                 <Badge variant="secondary" className="gap-1.5">

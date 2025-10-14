@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { searchContentTool } from '@/ai/tools/tmdb';
+import { searchContentTool, getWatchProvidersTool } from '@/ai/tools/tmdb';
 import {z} from 'zod';
 
 const GroupTasteFusionInputSchema = z.object({
@@ -30,6 +30,7 @@ const GroupTasteFusionOutputSchema = z.array(
     posterUrl: z.string().describe('The URL of the poster.'),
     groupMatchPercentage: z.number().describe('The percentage of how well the item matches the group preferences.'),
     whyThisWorks: z.string().describe('A breakdown of why the item works for the group.'),
+    watchProviders: z.array(z.string()).describe('A list of streaming providers where the content is available.'),
   })
 ).describe('An array of recommendations with match scores and breakdowns.');
 
@@ -44,14 +45,15 @@ const prompt = ai.definePrompt({
   name: 'groupTasteFusionPrompt',
   input: {schema: GroupTasteFusionInputSchema},
   output: {schema: GroupTasteFusionOutputSchema},
-  tools: [searchContentTool],
+  tools: [searchContentTool, getWatchProvidersTool],
   prompt: `You are an AI recommendation expert for movies and TV shows. Your goal is to recommend content that satisfies the entire group.
 
 1.  Analyze the preferences of all participants. Combine their selected moods, genres, and vibe references to create a unified search query.
 2.  Use the \`searchContent\` tool to find movies and TV shows ('any' media type) that match these combined preferences.
-3.  For each potential recommendation, calculate a 'Group Match Percentage' indicating how well it aligns with the overall group preferences.
-4.  Provide a "Why this works" breakdown explaining why the item is a good fit, considering the different tastes within the group.
-5.  Do not recommend any item that does not have a poster URL.
+3.  For each potential recommendation, use the \`getWatchProviders\` tool to get the list of streaming services.
+4.  For each potential recommendation, calculate a 'Group Match Percentage' indicating how well it aligns with the overall group preferences.
+5.  Provide a "Why this works" breakdown explaining why the item is a good fit, considering the different tastes within the group.
+6.  Do not recommend any item that does not have a poster URL.
 
 Group Preferences:
 {{#each participants}}

@@ -1,5 +1,4 @@
 import type { TmdbMovie, TmdbTvShow } from './types';
-import 'dotenv/config';
 
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
 
@@ -68,13 +67,11 @@ export async function searchContent(query?: string, genreNames?: string[], media
   let results: (TmdbMovie | TmdbTvShow)[] = [];
   const hasGenres = genreNames && genreNames.length > 0;
   
-  // Path 1: Prioritize genre-based discovery if genres are provided.
   if (hasGenres) {
     const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean).join(',');
     if (genreIds) {
         params.with_genres = genreIds;
     }
-    // You can optionally add the query to filter down the discovered items, TMDB supports this
     if (query) {
         params.query = query;
     }
@@ -88,25 +85,25 @@ export async function searchContent(query?: string, genreNames?: string[], media
         results.push(...(data.results || []).map((item: any) => ({ ...item, media_type: type })));
       } catch (error) {
         console.error(`Error discovering ${type} with genres:`, error);
-        // Do not re-throw; allow the function to continue if one type fails
       }
     }
-  // Path 2: Fallback to keyword-based search if no genres are provided but a query is.
   } else if (query) {
     params.query = query;
-    const endpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
-    const data = await fetchFromTMDB(endpoint, params);
+    const searchEndpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
+
+    const data = await fetchFromTMDB(searchEndpoint, params);
     results = (data.results || []).filter((r: any) => {
-        if (mediaType === 'any') return ['movie', 'tv'].includes(r.media_type);
-        return r.media_type === mediaType;
+      const type = r.media_type;
+      if (!type || !['movie', 'tv'].includes(type)) return false;
+      if (mediaType !== 'any' && type !== mediaType) return false;
+      return true;
     });
   }
-  // If no query and no genres, results will be an empty array.
 
   return results
-    .filter(item => item.poster_path) // Ensure item has a poster.
-    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0)) // Sort by rating.
-    .slice(0, 20); // Limit to top 20.
+    .filter(item => item.poster_path)
+    .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
+    .slice(0, 20);
 }
 
 
@@ -117,4 +114,14 @@ export async function getRecommendations(mediaId: number, mediaType: 'movie' | '
     page: '1',
   });
   return (data.results || []).map((item: any) => ({ ...item, media_type: mediaType }));
+}
+
+export async function getWatchProviders(mediaId: number, mediaType: 'movie' | 'tv'): Promise<string[]> {
+    const endpoint = `/${mediaType}/${mediaId}/watch/providers`;
+    const data = await fetchFromTMDB(endpoint);
+    const providers = data.results?.US?.flatrate;
+    if (!providers || providers.length === 0) {
+        return [];
+    }
+    return providers.map((p: any) => p.provider_name).slice(0, 3); // Return top 3 streaming providers
 }

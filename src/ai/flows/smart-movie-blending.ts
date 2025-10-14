@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { searchContentTool, getRecommendationsTool } from '@/ai/tools/tmdb';
+import { searchContentTool, getRecommendationsTool, getWatchProvidersTool } from '@/ai/tools/tmdb';
 import {z} from 'zod';
 
 const SmartMovieBlendingInputSchema = z.object({
@@ -26,6 +26,7 @@ const SmartMovieBlendingOutputSchema = z.array(
     confidenceScore: z.number().describe('A score indicating how well the content matches the input criteria.'),
     reason: z.string().describe('Explanation of why this content works, including genre and mood.'),
     posterUrl: z.string().nullable().describe('The URL of the poster.'),
+    watchProviders: z.array(z.string()).describe('A list of streaming providers where the content is available.'),
   })
 ).describe('A list of movie or TV show recommendations');
 export type SmartMovieBlendingOutput = z.infer<typeof SmartMovieBlendingOutputSchema>;
@@ -38,16 +39,18 @@ const prompt = ai.definePrompt({
   name: 'smartMovieBlendingPrompt',
   input: {schema: SmartMovieBlendingInputSchema},
   output: {schema: SmartMovieBlendingOutputSchema},
-  tools: [searchContentTool, getRecommendationsTool],
-  prompt: `You are a movie and TV show recommendation expert. Use the searchContent tool to find 5-10 items that match the user's criteria.
+  tools: [searchContentTool, getRecommendationsTool, getWatchProvidersTool],
+  prompt: `You are a movie and TV show recommendation expert. 
+  1. Use the searchContent tool to find 5-10 items that match the user's criteria.
+  2. For each item found, use the getWatchProviders tool to see where it is streaming in the US.
+  3. For each recommended item, provide a confidence score, a brief reason for the recommendation, and the list of watch providers. 
+  4. Do not recommend an item if it does not have a poster.
 
 The user's criteria are:
 Mood: {{{mood}}}
 Media Type: {{{mediaType}}}
 Vibe: {{{vibe}}}
-Genres: {{#each genres}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
-
-For each recommended item, provide a confidence score and a brief reason for the recommendation. Do not recommend an item if it does not have a poster.`,
+Genres: {{#each genres}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}`,
 });
 
 const smartMovieBlendingFlow = ai.defineFlow(

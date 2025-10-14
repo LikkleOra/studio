@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { searchContent, getRecommendations } from '@/lib/tmdb';
+import { searchContent, getRecommendations, getWatchProviders } from '@/lib/tmdb';
 import type { TmdbMovie, TmdbTvShow } from '@/lib/types';
 import { z } from 'zod';
 
@@ -49,12 +49,10 @@ export const searchContentTool = ai.defineTool(
   async ({ query, genres, mediaType }) => {
     console.log(`Searching content with input: ${JSON.stringify({ query, genres, mediaType })}`);
     try {
-      // Call the refactored searchContent function with individual arguments.
       const content = await searchContent(query, genres, mediaType);
       return transformMedia(content);
     } catch (error) {
       console.error('Error in searchContentTool:', error);
-      // Gracefully return an empty array to prevent the AI flow from crashing.
       return [];
     }
   }
@@ -88,4 +86,24 @@ export const getRecommendationsTool = ai.defineTool(
       return [];
     }
   }
+);
+
+export const getWatchProvidersTool = ai.defineTool(
+    {
+        name: 'getWatchProviders',
+        description: 'Get a list of streaming providers for a movie or TV show in the US region.',
+        inputSchema: z.object({
+            mediaId: z.number().describe('The ID of the movie or TV show.'),
+            mediaType: z.enum(['movie', 'tv']).describe("The type of media: 'movie' or 'tv'."),
+        }),
+        outputSchema: z.array(z.string()).describe('A list of streaming provider names.'),
+    },
+    async ({ mediaId, mediaType }) => {
+        try {
+            return await getWatchProviders(mediaId, mediaType);
+        } catch (error) {
+            console.error(`Error fetching watch providers for ${mediaType} ID ${mediaId}:`, error);
+            return [];
+        }
+    }
 );
