@@ -66,33 +66,40 @@ export async function searchContent(query?: string, genreNames?: string[], media
 
   let results: (TmdbMovie | TmdbTvShow)[] = [];
   
+  // If a query is provided, prioritize search over discovery
   if (query) {
     params.query = query;
     const searchEndpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
     const data = await fetchFromTMDB(searchEndpoint, params);
     results = (data.results || []).filter((r: any) => {
-      const type = r.media_type;
+      // For /search/multi, media_type is present. For /search/movie or /search/tv, it is not.
+      const type = r.media_type || mediaType;
       if (!type || !['movie', 'tv'].includes(type)) return false;
       if (mediaType !== 'any' && type !== mediaType) return false;
       return true;
-    });
+    }).map((r: any) => ({...r, media_type: r.media_type || mediaType}));
+
   } else if (genreNames && genreNames.length > 0) {
     const genreIds = genreNames.map(name => genreMap[name]).filter(Boolean).join(',');
     if (genreIds) {
         params.with_genres = genreIds;
     }
     
-    const mediaToDiscover: MediaType[] = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
+    const mediaToDiscover: ('movie' | 'tv')[] = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
     
-    for (const type of mediaToDiscover) {
-      const discoverEndpoint = `/discover/${type}`;
-      try {
-        const data = await fetchFromTMDB(discoverEndpoint, params);
-        results.push(...(data.results || []).map((item: any) => ({ ...item, media_type: type })));
-      } catch (error) {
-        console.error(`Error discovering ${type} with genres:`, error);
-      }
-    }
+    const promises = mediaToDiscover.map(async (type) => {
+        const discoverEndpoint = `/discover/${type}`;
+        try {
+            const data = await fetchFromTMDB(discoverEndpoint, params);
+            return (data.results || []).map((item: any) => ({ ...item, media_type: type }));
+        } catch (error) {
+            console.error(`Error discovering ${type} with genres:`, error);
+            return []; // Return empty array on error for this type
+        }
+    });
+
+    const settledResults = await Promise.all(promises);
+    results = settledResults.flat();
   }
 
   return results
@@ -137,10 +144,11 @@ export async function getWatchProviderLinks(mediaId: number, mediaType: 'movie' 
         return [];
     }
     // TMDB doesn't provide direct links, so we'll provide a search link.
+    const mediaTitle = mediaType === 'movie' ? (await getMediaDetails(mediaId, mediaType)).title : (await getMediaDetails(mediaId, mediaType)).name;
     const justWatchUrl = `https://www.justwatch.com/us/search?q=`;
     return providers.map((p: any) => ({
         name: p.provider_name,
         logoUrl: `https://image.tmdb.org/t/p/w200${p.logo_path}`,
-        link: `${justWatchUrl}${encodeURIComponent(mediaType === 'movie' ? data.title : data.name)}`,
+        link: `${justWatchUrl}${encodeURIComponent(mediaTitle || '')}`,
     })).slice(0, 4);
 }
