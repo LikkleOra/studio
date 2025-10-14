@@ -131,7 +131,13 @@ export async function getMovieDetails(mediaId: number, mediaType: 'movie' | 'tv'
     
     try {
         const details = await getMediaDetails(mediaId, mediaType);
-        const providers = await getWatchProviderLinks(mediaId, mediaType);
+        const mediaTitle = details.title || details.name;
+
+        if (!mediaTitle) {
+            return { error: 'Failed to find a title for the selected media.' };
+        }
+
+        const providers = await getWatchProviderLinks(mediaId, mediaType, mediaTitle);
 
         const trailer = details.videos?.results?.find(
             (v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')

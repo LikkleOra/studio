@@ -132,7 +132,7 @@ export async function getMediaDetails(mediaId: number, mediaType: 'movie' | 'tv'
   return data;
 }
 
-export async function getWatchProviderLinks(mediaId: number, mediaType: 'movie' | 'tv'): Promise<Provider[]> {
+export async function getWatchProviderLinks(mediaId: number, mediaType: 'movie' | 'tv', mediaTitle: string): Promise<Provider[]> {
     const endpoint = `/${mediaType}/${mediaId}/watch/providers`;
     const data = await fetchFromTMDB(endpoint);
     const providers = data.results?.US?.flatrate;
@@ -140,11 +140,6 @@ export async function getWatchProviderLinks(mediaId: number, mediaType: 'movie' 
     if (!providers || providers.length === 0) {
         return [];
     }
-    
-    const mediaDetails = await getMediaDetails(mediaId, mediaType);
-    const mediaTitle = mediaDetails.title || mediaDetails.name;
-
-    if (!mediaTitle) return [];
 
     return providers.map((p: any) => {
         const searchUrl = new URL('https://www.google.com/search');
