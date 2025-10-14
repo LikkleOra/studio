@@ -90,7 +90,7 @@ export async function searchContent(query?: string, genreNames?: string[], media
             return (data.results || []).map((item: any) => ({ ...item, media_type: type }));
         } catch (error) {
             console.error(`Error discovering ${type} with genres:`, error);
-            return [];
+            return []; // Return empty array on error to not fail the whole search
         }
     });
 
