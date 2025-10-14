@@ -12,9 +12,9 @@ import { getMovieDetails } from '@/lib/actions';
 import type { MovieInfo, Provider } from '@/lib/types';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
-import { Star, Tv, Link as LinkIcon, LoaderCircle } from 'lucide-react';
-import { Button } from './ui/button';
+import { Star, Tv, Link as LinkIcon } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 type MovieDetailsDialogProps = {
   open: boolean;
@@ -59,6 +59,12 @@ export function MovieDetailsDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col sm:flex-row p-0">
         {loading ? (
             <div className="w-full p-6 flex flex-col sm:flex-row gap-6">
+                <DialogHeader>
+                    <VisuallyHidden>
+                        <DialogTitle>Loading movie details</DialogTitle>
+                        <DialogDescription>Please wait while the movie details are being loaded.</DialogDescription>
+                    </VisuallyHidden>
+                </DialogHeader>
                 <Skeleton className="w-full sm:w-1/3 h-96 rounded-md" />
                 <div className="w-full sm:w-2/3 space-y-4">
                     <Skeleton className="h-8 w-3/4" />
@@ -69,7 +75,10 @@ export function MovieDetailsDialog({
                 </div>
             </div>
         ) : error ? (
-            <div className="text-destructive-foreground p-6">Error: {error}</div>
+            <DialogHeader className="p-6">
+                <DialogTitle>Error</DialogTitle>
+                <DialogDescription>{error}</DialogDescription>
+            </DialogHeader>
         ) : details ? (
           <>
             <div className="w-full sm:w-1/3 relative flex-shrink-0">
