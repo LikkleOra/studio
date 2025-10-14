@@ -9,10 +9,10 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { getMovieDetails } from '@/lib/actions';
-import type { MovieInfo, Provider } from '@/lib/types';
+import type { MovieInfo } from '@/lib/types';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
-import { Star, Tv, Link as LinkIcon } from 'lucide-react';
+import { Star, Tv } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
@@ -56,85 +56,89 @@ export function MovieDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col sm:flex-row p-0">
+      <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 grid grid-cols-1 sm:grid-cols-3 gap-0">
         {loading ? (
-            <div className="w-full p-6 flex flex-col sm:flex-row gap-6">
-                <DialogHeader>
-                    <VisuallyHidden>
-                        <DialogTitle>Loading movie details</DialogTitle>
-                        <DialogDescription>Please wait while the movie details are being loaded.</DialogDescription>
-                    </VisuallyHidden>
-                </DialogHeader>
-                <Skeleton className="w-full sm:w-1/3 h-96 rounded-md" />
-                <div className="w-full sm:w-2/3 space-y-4">
-                    <Skeleton className="h-8 w-3/4" />
-                    <Skeleton className="h-4 w-1/4" />
-                    <Skeleton className="h-20 w-full" />
-                    <Skeleton className="h-10 w-1/2" />
-                    <Skeleton className="h-12 w-full" />
-                </div>
-            </div>
-        ) : error ? (
-            <DialogHeader className="p-6">
-                <DialogTitle>Error</DialogTitle>
-                <DialogDescription>{error}</DialogDescription>
+          <div className="w-full p-6 sm:col-span-3 flex flex-col sm:flex-row gap-6">
+            <DialogHeader>
+              <VisuallyHidden>
+                <DialogTitle>Loading movie details</DialogTitle>
+                <DialogDescription>Please wait while the movie details are being loaded.</DialogDescription>
+              </VisuallyHidden>
             </DialogHeader>
+            <Skeleton className="w-full sm:w-1/3 h-96 rounded-md" />
+            <div className="w-full sm:w-2/3 space-y-4">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-10 w-1/2" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+        ) : error ? (
+           <div className="p-6 sm:col-span-3">
+                <DialogHeader>
+                    <DialogTitle>Error</DialogTitle>
+                    <DialogDescription>{error}</DialogDescription>
+                </DialogHeader>
+            </div>
         ) : details ? (
           <>
-            <div className="w-full sm:w-1/3 relative flex-shrink-0">
-                <Image
-                    src={details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : '/placeholder.svg'}
-                    alt={`Poster for ${title}`}
-                    width={500}
-                    height={750}
-                    className="object-cover rounded-l-lg"
-                />
+            <div className="col-span-1 hidden sm:block">
+              <Image
+                src={details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : '/placeholder.svg'}
+                alt={`Poster for ${title}`}
+                width={500}
+                height={750}
+                className="object-cover w-full h-full rounded-l-lg"
+              />
             </div>
-            <div className="flex-grow p-6 overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-3xl font-headline mb-2">{title}</DialogTitle>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+            <div className="col-span-1 sm:col-span-2 p-6 overflow-y-auto">
+              <DialogHeader className="mb-4">
+                <DialogTitle className="text-3xl font-headline">{title}</DialogTitle>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   {releaseDate && <span>{new Date(releaseDate).getFullYear()}</span>}
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400" />
-                    <span>{details.vote_average.toFixed(1)}</span>
-                  </div>
+                  {details.vote_average > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-yellow-400" />
+                      <span>{details.vote_average.toFixed(1)}</span>
+                    </div>
+                  )}
                 </div>
               </DialogHeader>
 
               <div className="space-y-6">
                 {details.trailerKey && (
-                    <div className="aspect-video">
-                        <iframe
-                            src={`https://www.youtube.com/embed/${details.trailerKey}`}
-                            title="YouTube video player"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="w-full h-full rounded-md"
-                        ></iframe>
-                    </div>
+                  <div className="aspect-video">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${details.trailerKey}`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full rounded-md"
+                    ></iframe>
+                  </div>
                 )}
                 
                 <DialogDescription className="text-base">{details.overview}</DialogDescription>
 
                 <div className="flex flex-wrap gap-2">
-                    {details.genres?.map((genre) => (
-                        <Badge key={genre.id} variant="secondary">{genre.name}</Badge>
-                    ))}
+                  {details.genres?.map((genre) => (
+                    <Badge key={genre.id} variant="secondary">{genre.name}</Badge>
+                  ))}
                 </div>
 
                 {details.watchProviders && details.watchProviders.length > 0 && (
-                    <div>
-                        <h3 className="font-semibold mb-2 flex items-center gap-2"><Tv className="w-5 h-5"/> Where to Watch</h3>
-                        <div className="flex flex-wrap gap-3">
-                            {details.watchProviders.map((provider) => (
-                                <a href={provider.link} target="_blank" rel="noopener noreferrer" key={provider.name}>
-                                    <Image src={provider.logoUrl} alt={provider.name} width={40} height={40} className="rounded-md hover:opacity-80 transition-opacity" title={provider.name} />
-                                </a>
-                            ))}
-                        </div>
+                  <div>
+                    <h3 className="font-semibold mb-2 flex items-center gap-2"><Tv className="w-5 h-5"/> Where to Watch</h3>
+                    <div className="flex flex-wrap gap-3">
+                      {details.watchProviders.map((provider) => (
+                        <a href={provider.link} target="_blank" rel="noopener noreferrer" key={provider.name}>
+                          <Image src={provider.logoUrl} alt={provider.name} width={40} height={40} className="rounded-md hover:opacity-80 transition-opacity" title={provider.name} />
+                        </a>
+                      ))}
                     </div>
+                  </div>
                 )}
               </div>
             </div>
