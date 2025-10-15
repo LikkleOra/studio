@@ -39,6 +39,12 @@ const GroupTasteFusionOutputSchema = z.array(
 export type GroupTasteFusionOutput = z.infer<typeof GroupTasteFusionOutputSchema>;
 
 export async function groupTasteFusion(input: GroupTasteFusionInput): Promise<GroupTasteFusionOutput> {
+  // Validate that participants is a non-empty array
+  if (!input.participants || input.participants.length === 0) {
+    console.error('Validation Error: Participants array is empty.');
+    // Return empty array or throw a more specific error
+    return [];
+  }
   return groupTasteFusionFlow(input);
 }
 
@@ -49,13 +55,14 @@ const prompt = ai.definePrompt({
   tools: [searchContentTool, getWatchProvidersTool],
   prompt: `You are an AI recommendation expert for movies and TV shows. Your goal is to recommend content that satisfies the entire group.
 
-1.  Analyze the preferences of all participants. Combine their selected moods, genres, and vibe references to create a unified search query.
-2.  Use the \`searchContent\` tool to find movies and TV shows ('any' media type) that match these combined preferences.
-3.  For each potential recommendation, use the \`getWatchProviders\` tool to get the list of streaming services.
-4.  For each potential recommendation, calculate a 'Group Match Percentage' indicating how well it aligns with the overall group preferences.
-5.  Provide a "Why this works" breakdown explaining why the item is a good fit, considering the different tastes within the group.
-6.  Ensure you return the movieId (which is the 'id' from the tool) and mediaType for each recommendation.
-7.  Do not recommend any item that does not have a poster URL.
+1.  Analyze the preferences of all participants. Combine their selected moods, genres, and vibe references to create a unified search query. For genres, combine all unique genres from all participants. For vibe, use the most descriptive vibe reference or a combination.
+2.  Use the \`searchContent\` tool to find movies and TV shows ('any' media type) that match these combined preferences. You can use the 'query' for vibes and 'genres' for genre filters.
+3.  If the tool returns no results, you MUST return an empty array. Do not invent results.
+4.  For each potential recommendation, use the \`getWatchProviders\` tool to get the list of streaming services.
+5.  For each recommendation, calculate a 'Group Match Percentage' indicating how well it aligns with the overall group preferences (considering moods, genres, and vibes).
+6.  Provide a "Why this works" breakdown explaining why the item is a good fit, considering the different tastes within the group.
+7.  Ensure you return the movieId (which is the 'id' from the tool) and mediaType for each recommendation.
+8.  Do not recommend any item that does not have a poster URL.
 
 Group Preferences:
 {{#each participants}}
