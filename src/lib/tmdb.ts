@@ -72,7 +72,7 @@ export async function searchContent(query?: string, genreNames?: string[], media
     const data = await fetchFromTMDB(searchEndpoint, params);
     results = (data.results || []).filter((r: any) => {
       const type = r.media_type || mediaType;
-      return type === 'movie' || type === 'tv';
+      return (type === 'movie' || type === 'tv') && r.poster_path;
     }).map((r: any) => ({...r, media_type: r.media_type || mediaType}));
 
   } else if (genreNames && genreNames.length > 0) {
@@ -143,7 +143,7 @@ export async function getWatchProviderLinks(mediaId: number, mediaType: 'movie' 
 
     return providers.map((p: any) => {
         const searchUrl = new URL('https://www.google.com/search');
-        searchUrl.searchParams.append('q', `${p.provider_name} ${mediaTitle}`);
+        searchUrl.searchParams.append('q', `${mediaTitle} streaming ${p.provider_name}`);
         
         return {
             name: p.provider_name,
