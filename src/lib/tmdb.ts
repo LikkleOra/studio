@@ -66,6 +66,7 @@ export async function searchContent(query?: string, genreNames?: string[], media
 
   let results: (TmdbMovie | TmdbTvShow)[] = [];
   
+  // Scenario 1: Search by text query
   if (query && typeof query === 'string' && query.trim().length > 0) {
     params.query = query;
     const searchEndpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
@@ -75,7 +76,9 @@ export async function searchContent(query?: string, genreNames?: string[], media
       return (type === 'movie' || type === 'tv') && r.poster_path;
     }).map((r: any) => ({...r, media_type: r.media_type || mediaType}));
 
-  } else if (genreNames && genreNames.length > 0) {
+  } 
+  // Scenario 2: Search by genres only
+  else if (genreNames && genreNames.length > 0) {
     const genreIds = genreNames.map(name => genreMap[name]).filter(Boolean).join(',');
     if (genreIds) {
         params.with_genres = genreIds;
@@ -98,6 +101,7 @@ export async function searchContent(query?: string, genreNames?: string[], media
     results = settledResults.flat();
   }
 
+  // Final filtering, sorting, and slicing
   return results
     .filter(item => item.poster_path)
     .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
@@ -143,7 +147,7 @@ export async function getWatchProviderLinks(mediaId: number, mediaType: 'movie' 
 
     return providers.map((p: any) => {
         const searchUrl = new URL('https://www.google.com/search');
-        searchUrl.searchParams.append('q', `${mediaTitle} streaming ${p.provider_name}`);
+        searchUrl.searchParams.append('q', `${mediaTitle} streaming on ${p.provider_name}`);
         
         return {
             name: p.provider_name,
