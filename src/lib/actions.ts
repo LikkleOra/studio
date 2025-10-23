@@ -18,6 +18,17 @@ export async function findIndividualMovies(
   prevState: IndividualMovieState,
   formData: FormData
 ): Promise<IndividualMovieState> {
+  if (!process.env.GEMINI_API_KEY) {
+    return {
+      error: 'The GEMINI_API_KEY is not configured. Please add it to your environment variables in your deployment settings.',
+    };
+  }
+  if (!process.env.TMDB_API_KEY) {
+    return {
+      error: 'The TMDB_API_KEY is not configured. Please add it to your environment variables in your deployment settings.',
+    };
+  }
+
   const validatedFields = individualSchema.safeParse({
     mood: formData.get('mood'),
     mediaType: formData.get('mediaType'),
@@ -55,9 +66,6 @@ export async function findIndividualMovies(
     return { movies: moviesWithPlaceholders };
   } catch (error: any) {
     console.error(error);
-    if (error.message.includes('TMDB_API_KEY')) {
-        return { error: 'The TMDB API key is not configured. Please add it to your environment variables.' };
-    }
     return {
       error: 'An AI error occurred. Please try again later.',
     };
@@ -72,6 +80,17 @@ export async function findGroupMovies(
   prevState: GroupMovieState,
   formData: FormData
 ): Promise<GroupMovieState> {
+  if (!process.env.GEMINI_API_KEY) {
+    return {
+      error: 'The GEMINI_API_KEY is not configured. Please add it to your environment variables in your deployment settings.',
+    };
+  }
+   if (!process.env.TMDB_API_KEY) {
+    return {
+      error: 'The TMDB_API_KEY is not configured. Please add it to your environment variables in your deployment settings.',
+    };
+  }
+
   const validatedFields = groupSchema.safeParse({
     participants: formData.get('participants'),
   });
@@ -109,9 +128,6 @@ export async function findGroupMovies(
 
   } catch (error: any) {
     console.error(error);
-    if (error.message.includes('TMDB_API_KEY')) {
-        return { error: 'The TMDB API key is not configured. Please add it to your environment variables.' };
-    }
     return {
       error: 'An AI error occurred or participant data was malformed. Please try again.',
     };
