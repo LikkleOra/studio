@@ -36,6 +36,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  serverRuntimeConfig: {
+    // Will only be available on the server side
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    TMDB_API_KEY: process.env.TMDB_API_KEY,
+  },
 };
 
 export default nextConfig;
