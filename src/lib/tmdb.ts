@@ -1,4 +1,8 @@
 import type { TmdbMovie, TmdbTvShow, MovieInfo, Provider } from './types';
+import getConfig from 'next/config';
+
+const { serverRuntimeConfig } = getConfig() || {};
+const TMDB_API_KEY = serverRuntimeConfig?.TMDB_API_KEY || process.env.TMDB_API_KEY;
 
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
 
@@ -36,10 +40,9 @@ const genreMap: { [key: string]: number } = {
 type MediaType = 'movie' | 'tv' | 'any';
 
 async function fetchFromTMDB(endpoint: string, params: Record<string, string> = {}): Promise<any> {
-  const TMDB_API_KEY = process.env.TMDB_API_KEY;
   if (!TMDB_API_KEY) {
-    console.error('TMDB_API_KEY is not configured in the environment.');
-    throw new Error('TMDB_API_KEY is not configured in the environment.');
+    console.error('TMDB_API_KEY is not configured.');
+    throw new Error('TMDB_API_KEY is not configured.');
   }
 
   const url = new URL(`${TMDB_API_URL}${endpoint}`);
