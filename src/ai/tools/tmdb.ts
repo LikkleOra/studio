@@ -47,9 +47,20 @@ export const searchContentTool = ai.defineTool(
     })),
   },
   async ({ query, genres, mediaType }) => {
+    // Validate that either query or genres are provided.
+    if ((!query || query.trim() === '') && (!genres || genres.length === 0)) {
+        console.error('searchContentTool Error: A query or at least one genre must be provided.');
+        // Return an empty array to the flow to indicate no results.
+        return [];
+    }
+    
     console.log(`Searching content with input: ${JSON.stringify({ query, genres, mediaType })}`);
     try {
       const content = await searchContent(query, genres, mediaType);
+      if (!content || content.length === 0) {
+        console.log('searchContentTool: No results found from TMDB.');
+        return [];
+      }
       return transformMedia(content);
     } catch (error) {
       console.error('Error in searchContentTool:', error);

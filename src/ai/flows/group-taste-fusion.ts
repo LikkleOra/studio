@@ -57,7 +57,7 @@ const prompt = ai.definePrompt({
 
 1.  Analyze the preferences of all participants. Combine their selected moods, genres, and vibe references to create a unified search query. For genres, combine all unique genres from all participants. For vibe, use the most descriptive vibe reference or a combination.
 2.  Use the \`searchContent\` tool to find movies and TV shows ('any' media type) that match these combined preferences. You can use the 'query' for vibes and 'genres' for genre filters.
-3.  If the tool returns no results, you MUST return an empty array. Do not invent results.
+3.  If the tool returns no results or an empty array, you MUST return an empty array from the flow. Do not invent results. Do not try searching again.
 4.  For each potential recommendation, use the \`getWatchProviders\` tool to get the list of streaming services.
 5.  For each recommendation, calculate a 'Group Match Percentage' indicating how well it aligns with the overall group preferences (considering moods, genres, and vibes).
 6.  Provide a "Why this works" breakdown explaining why the item is a good fit, considering the different tastes within the group.
@@ -81,6 +81,9 @@ const groupTasteFusionFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      return [];
+    }
+    return output;
   }
 );

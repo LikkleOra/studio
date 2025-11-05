@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   tools: [searchContentTool, getRecommendationsTool, getWatchProvidersTool],
   prompt: `You are a movie and TV show recommendation expert. 
   1. Use the searchContent tool to find 5-10 items that match the user's criteria.
-  2. If the tool returns no results, you MUST inform the user that nothing was found and suggest they try a different query. Do not invent results.
+  2. If the tool returns no results or an empty array, you MUST return an empty array from the flow. Do not invent results. Do not try searching again.
   3. For each item found, use the getWatchProviders tool to see where it is streaming in the US.
   4. For each recommended item, provide a confidence score, a brief reason for the recommendation, and the list of watch providers.
   5. Ensure you return the mediaId and mediaType for each recommendation.
@@ -65,6 +65,9 @@ const smartMovieBlendingFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      return [];
+    }
+    return output;
   }
 );
