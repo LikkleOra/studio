@@ -6,6 +6,9 @@ import { getMediaDetails, getWatchProviderLinks } from '@/lib/tmdb';
 import { z } from 'zod';
 import type { IndividualMovieState, GroupMovieState, MovieInfo } from './types';
 import { placeholderImages } from './placeholder-images';
+import getConfig from 'next/config';
+
+const { serverRuntimeConfig } = getConfig() || {};
 
 const individualSchema = z.object({
   mood: z.string().min(1, 'Mood is required.'),
@@ -14,19 +17,26 @@ const individualSchema = z.object({
   genres: z.string().optional(),
 });
 
+function checkApiKeys() {
+  const geminiApiKey = serverRuntimeConfig?.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  const tmdbApiKey = serverRuntimeConfig?.TMDB_API_KEY || process.env.TMDB_API_KEY;
+
+  if (!geminiApiKey) {
+    return 'The GEMINI_API_KEY is not configured. Please add it to your environment variables. If you have already added it, you may need to redeploy your application.';
+  }
+  if (!tmdbApiKey) {
+    return 'The TMDB_API_KEY is not configured. Please add it to your environment variables. If you have already added it, you may need to redeploy your application.';
+  }
+  return null;
+}
+
 export async function findIndividualMovies(
   prevState: IndividualMovieState,
   formData: FormData
 ): Promise<IndividualMovieState> {
-  if (!process.env.GEMINI_API_KEY) {
-    return {
-      error: 'The GEMINI_API_KEY is not configured. Please add it to your environment variables in your deployment settings.',
-    };
-  }
-  if (!process.env.TMDB_API_KEY) {
-    return {
-      error: 'The TMDB_API_KEY is not configured. Please add it to your environment variables in your deployment settings.',
-    };
+  const apiKeyError = checkApiKeys();
+  if (apiKeyError) {
+    return { error: apiKeyError };
   }
 
   const validatedFields = individualSchema.safeParse({
@@ -80,15 +90,9 @@ export async function findGroupMovies(
   prevState: GroupMovieState,
   formData: FormData
 ): Promise<GroupMovieState> {
-  if (!process.env.GEMINI_API_KEY) {
-    return {
-      error: 'The GEMINI_API_KEY is not configured. Please add it to your environment variables in your deployment settings.',
-    };
-  }
-   if (!process.env.TMDB_API_KEY) {
-    return {
-      error: 'The TMDB_API_KEY is not configured. Please add it to your environment variables in your deployment settings.',
-    };
+  const apiKeyError = checkApiKeys();
+  if (apiKeyError) {
+    return { error: apiKeyError };
   }
 
   const validatedFields = groupSchema.safeParse({
@@ -140,6 +144,11 @@ const detailsSchema = z.object({
 });
 
 export async function getMovieDetails(mediaId: number, mediaType: 'movie' | 'tv'): Promise<MovieInfo | { error: string }> {
+    const apiKeyError = checkApiKeys();
+    if (apiKeyError) {
+        return { error: apiKeyError };
+    }
+
     const validated = detailsSchema.safeParse({ mediaId, mediaType });
     if (!validated.success) {
         return { error: 'Invalid media ID or type.' };
