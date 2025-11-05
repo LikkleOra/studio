@@ -25,7 +25,7 @@ const SmartMovieBlendingOutputSchema = z.array(
     mediaId: z.number().describe('The ID of the recommended movie or show.'),
     mediaType: z.enum(['movie', 'tv']).describe("The type of media ('movie' or 'tv')."),
     title: z.string().describe('The title of the movie or show.'),
-    confidenceScore: z.number().describe('A score indicating how well the content matches the input criteria.'),
+    confidenceScore: z.number().describe('A score from 0.0 to 1.0 indicating how well the content matches the input criteria.'),
     reason: z.string().describe('Explanation of why this content works, including genre and mood.'),
     posterUrl: z.string().nullable().describe('The URL of the poster.'),
     watchProviders: z.array(z.string()).describe('A list of streaming providers where the content is available.'),
@@ -41,20 +41,25 @@ const prompt = ai.definePrompt({
   name: 'smartMovieBlendingPrompt',
   input: {schema: SmartMovieBlendingInputSchema},
   output: {schema: SmartMovieBlendingOutputSchema},
-  tools: [searchContentTool, getRecommendationsTool, getWatchProvidersTool],
-  prompt: `You are a movie and TV show recommendation expert. 
-  1. Use the searchContent tool to find 5-10 items that match the user's criteria. Combine the mood, vibe, and genres to form a search query.
-  2. If the tool returns no results or an empty array, you MUST return an empty array from the flow. Do not invent results. Do not try searching again.
-  3. For each item found, use the getWatchProviders tool to see where it is streaming in the US.
-  4. For each recommended item, provide a confidence score, a brief reason for the recommendation, and the list of watch providers.
-  5. Ensure you return the mediaId (which is the 'id' from the tool) and mediaType for each recommendation.
-  6. Do not recommend an item if it does not have a poster.
+  tools: [searchContentTool, getWatchProvidersTool],
+  prompt: `You are a movie and TV show recommendation expert. Your goal is to find 5-10 highly relevant items for a user.
+
+Follow these steps:
+1.  Analyze the user's criteria: Mood, Media Type, Vibe, and Genres.
+2.  Combine the 'vibe' and 'mood' to form a descriptive search query. For example, if the mood is "Scared" and the vibe is "a haunted house", the query could be "scary haunted house movie".
+3.  Use the \`searchContent\` tool with the query, genres, and mediaType. This is your primary method for finding content.
+4.  **IMPORTANT**: If the \`searchContent\` tool returns no results or an empty array, you MUST return an empty array from the flow. Do not invent results. Do not try searching again.
+5.  For each potential recommendation returned by the tool, evaluate its suitability.
+6.  For each suitable item, use the \`getWatchProviders\` tool to get the list of streaming services in the US.
+7.  For each recommendation, create a confidence score (0.0 to 1.0) and a brief 'reason' explaining why it's a good match.
+8.  Ensure you return the mediaId (which is the 'id' from the tool) and mediaType for each recommendation.
+9.  You must not recommend any item that does not have a poster URL.
 
 The user's criteria are:
-Mood: {{{mood}}}
-Media Type: {{{mediaType}}}
-Vibe: {{{vibe}}}
-Genres: {{#each genres}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}`,
+- Mood: {{{mood}}}
+- Media Type: {{{mediaType}}}
+- Vibe: {{{vibe}}}
+- Genres: {{#each genres}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}`,
 });
 
 const smartMovieBlendingFlow = ai.defineFlow(
@@ -65,6 +70,8 @@ const smartMovieBlendingFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
+    // If the AI returns no output (which can happen if it follows the instructions to return nothing),
+    // ensure we send back an empty array to prevent downstream errors.
     if (!output) {
       return [];
     }

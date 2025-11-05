@@ -29,20 +29,18 @@ const GroupTasteFusionOutputSchema = z.array(
     mediaType: z.enum(['movie', 'tv']).describe("The type of media ('movie' or 'tv')."),
     title: z.string().describe('The title of the recommended movie or show.'),
     posterUrl: z.string().describe('The URL of the poster.'),
-    groupMatchPercentage: z.number().describe('The percentage of how well the item matches the group preferences.'),
-    whyThisWorks: z.string().describe('A breakdown of why the item works for the group.'),
+    groupMatchPercentage: z.number().describe('A percentage from 0 to 100 indicating how well the item matches the overall group preferences.'),
+    whyThisWorks: z.string().describe('A breakdown of why the item works for the group, considering different tastes.'),
     watchProviders: z.array(z.string()).describe('A list of streaming providers where the content is available.'),
   })
 ).describe('An array of recommendations with match scores and breakdowns.');
-
-
 export type GroupTasteFusionOutput = z.infer<typeof GroupTasteFusionOutputSchema>;
 
 export async function groupTasteFusion(input: GroupTasteFusionInput): Promise<GroupTasteFusionOutput> {
-  // Validate that participants is a non-empty array
+  // Validate that the participants array is not empty before calling the flow.
   if (!input.participants || input.participants.length === 0) {
     console.error('Validation Error: Participants array is empty.');
-    // Return empty array or throw a more specific error
+    // Return an empty array to prevent calling the AI with invalid input.
     return [];
   }
   return groupTasteFusionFlow(input);
@@ -55,11 +53,11 @@ const prompt = ai.definePrompt({
   tools: [searchContentTool, getWatchProvidersTool],
   prompt: `You are an AI recommendation expert for movies and TV shows. Your goal is to recommend content that satisfies the entire group.
 
-1.  Analyze the preferences of all participants. Combine their selected moods, genres, and vibe references to create a unified search query. For genres, combine all unique genres from all participants. For vibe, use the most descriptive vibe reference or a combination.
-2.  Use the \`searchContent\` tool to find movies and TV shows ('any' media type) that match these combined preferences. You can use the 'query' for vibes and 'genres' for genre filters.
-3.  If the tool returns no results or an empty array, you MUST return an empty array from the flow. Do not invent results. Do not try searching again.
+1.  Analyze the preferences of all participants. Synthesize their selected moods, genres, and vibe references to create a unified search strategy.
+2.  Use the \`searchContent\` tool to find movies and TV shows ('any' media type). You can use the 'query' for vibes and 'genres' for genre filters.
+3.  **IMPORTANT**: If the \`searchContent\` tool returns no results or an empty array, you MUST return an empty array from the flow. Do not invent results. Do not try searching again.
 4.  For each potential recommendation, use the \`getWatchProviders\` tool to get the list of streaming services.
-5.  For each recommendation, calculate a 'Group Match Percentage' indicating how well it aligns with the overall group preferences (considering moods, genres, and vibes).
+5.  For each recommendation, calculate a 'Group Match Percentage' (0-100) indicating how well it aligns with the overall group preferences.
 6.  Provide a "Why this works" breakdown explaining why the item is a good fit, considering the different tastes within the group.
 7.  Ensure you return the movieId (which is the 'id' from the tool) and mediaType for each recommendation.
 8.  Do not recommend any item that does not have a poster URL.
@@ -81,6 +79,7 @@ const groupTasteFusionFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
+    // If the AI returns no output, ensure we send back an empty array.
     if (!output) {
       return [];
     }
