@@ -49,21 +49,23 @@ export const searchContentTool = ai.defineTool(
   async ({ query, genres, mediaType }) => {
     // Validate that either query or genres are provided.
     if ((!query || query.trim() === '') && (!genres || genres.length === 0)) {
-        console.error('searchContentTool Error: A query or at least one genre must be provided.');
+        const errorMessage = 'searchContentTool Error: A query or at least one genre must be provided.';
+        console.error(errorMessage);
         // Return an empty array to the flow to indicate no results.
+        // Or you could throw an error to be caught by the calling flow.
         return [];
     }
     
-    console.log(`Searching content with input: ${JSON.stringify({ query, genres, mediaType })}`);
+    console.log(`[Genkit Tool] Searching content with input: ${JSON.stringify({ query, genres, mediaType })}`);
     try {
       const content = await searchContent(query, genres, mediaType);
       if (!content || content.length === 0) {
-        console.log('searchContentTool: No results found from TMDB.');
+        console.log('[Genkit Tool] searchContentTool: No results found from TMDB.');
         return [];
       }
       return transformMedia(content);
     } catch (error) {
-      console.error('Error in searchContentTool:', error);
+      console.error('[Genkit Tool] Error in searchContentTool:', error);
       // Return an empty array to the flow in case of an error. The AI can then handle it gracefully.
       return [];
     }
@@ -89,12 +91,12 @@ export const getRecommendationsTool = ai.defineTool(
     })),
   },
   async ({ mediaId, mediaType }) => {
-    console.log(`Getting recommendations for ${mediaType} ID: ${mediaId}`);
+    console.log(`[Genkit Tool] Getting recommendations for ${mediaType} ID: ${mediaId}`);
     try {
       const content = await getRecommendations(mediaId, mediaType);
       return transformMedia(content);
     } catch (error) {
-      console.error('Error fetching recommendations from TMDB:', error);
+      console.error('[Genkit Tool] Error fetching recommendations from TMDB:', error);
       return [];
     }
   }
@@ -112,9 +114,10 @@ export const getWatchProvidersTool = ai.defineTool(
     },
     async ({ mediaId, mediaType }) => {
         try {
+            console.log(`[Genkit Tool] Getting watch providers for ${mediaType} ID: ${mediaId}`);
             return await getWatchProviders(mediaId, mediaType);
         } catch (error) {
-            console.error(`Error fetching watch providers for ${mediaType} ID ${mediaId}:`, error);
+            console.error(`[Genkit Tool] Error fetching watch providers for ${mediaType} ID ${mediaId}:`, error);
             return [];
         }
     }

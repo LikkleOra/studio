@@ -36,17 +36,22 @@ const genreMap: { [key: string]: number } = {
 
 type MediaType = 'movie' | 'tv' | 'any';
 
-function getTmdbApiKey() {
+function getTmdbApiKey(): string {
     const { serverRuntimeConfig } = getConfig() || {};
-    return serverRuntimeConfig?.TMDB_API_KEY || process.env.TMDB_API_KEY;
+    // Prefer serverRuntimeConfig
+    if (serverRuntimeConfig && serverRuntimeConfig.TMDB_API_KEY) {
+        return serverRuntimeConfig.TMDB_API_KEY;
+    }
+    // Fallback to process.env for local dev
+    if (process.env.TMDB_API_KEY) {
+        return process.env.TMDB_API_KEY;
+    }
+    console.error('TMDB_API_KEY is not configured.');
+    throw new Error('TMDB_API_KEY is not configured.');
 }
 
 async function fetchFromTMDB(endpoint: string, params: Record<string, string> = {}): Promise<any> {
   const TMDB_API_KEY = getTmdbApiKey();
-  if (!TMDB_API_KEY) {
-    console.error('TMDB_API_KEY is not configured.');
-    throw new Error('TMDB_API_KEY is not configured.');
-  }
 
   const url = new URL(`${TMDB_API_URL}${endpoint}`);
   url.searchParams.append('api_key', TMDB_API_KEY);

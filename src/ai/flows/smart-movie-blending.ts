@@ -43,11 +43,11 @@ const prompt = ai.definePrompt({
   output: {schema: SmartMovieBlendingOutputSchema},
   tools: [searchContentTool, getRecommendationsTool, getWatchProvidersTool],
   prompt: `You are a movie and TV show recommendation expert. 
-  1. Use the searchContent tool to find 5-10 items that match the user's criteria.
+  1. Use the searchContent tool to find 5-10 items that match the user's criteria. Combine the mood, vibe, and genres to form a search query.
   2. If the tool returns no results or an empty array, you MUST return an empty array from the flow. Do not invent results. Do not try searching again.
   3. For each item found, use the getWatchProviders tool to see where it is streaming in the US.
   4. For each recommended item, provide a confidence score, a brief reason for the recommendation, and the list of watch providers.
-  5. Ensure you return the mediaId and mediaType for each recommendation.
+  5. Ensure you return the mediaId (which is the 'id' from the tool) and mediaType for each recommendation.
   6. Do not recommend an item if it does not have a poster.
 
 The user's criteria are:

@@ -8,7 +8,26 @@ import type { IndividualMovieState, GroupMovieState, MovieInfo } from './types';
 import { placeholderImages } from './placeholder-images';
 import getConfig from 'next/config';
 
-const { serverRuntimeConfig } = getConfig() || {};
+function getApiKey(key: 'GEMINI_API_KEY' | 'TMDB_API_KEY'): string | undefined {
+  const { serverRuntimeConfig } = getConfig() || {};
+  // Prefer serverRuntimeConfig
+  if (serverRuntimeConfig && serverRuntimeConfig[key]) {
+    return serverRuntimeConfig[key];
+  }
+  // Fallback to process.env for local dev and other environments
+  return process.env[key];
+}
+
+
+function checkApiKeys() {
+  if (!getApiKey('GEMINI_API_KEY')) {
+    return 'The GEMINI_API_KEY is not configured. Please add it to your environment variables. If you have already added it, you may need to redeploy your application.';
+  }
+  if (!getApiKey('TMDB_API_KEY')) {
+    return 'The TMDB_API_KEY is not configured. Please add it to your environment variables. If you have already added it, you may need to redeploy your application.';
+  }
+  return null;
+}
 
 const individualSchema = z.object({
   mood: z.string().min(1, 'Mood is required.'),
@@ -16,19 +35,6 @@ const individualSchema = z.object({
   vibe: z.string().optional(),
   genres: z.string().optional(),
 });
-
-function checkApiKeys() {
-  const geminiApiKey = serverRuntimeConfig?.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-  const tmdbApiKey = serverRuntimeConfig?.TMDB_API_KEY || process.env.TMDB_API_KEY;
-
-  if (!geminiApiKey) {
-    return 'The GEMINI_API_KEY is not configured. Please add it to your environment variables. If you have already added it, you may need to redeploy your application.';
-  }
-  if (!tmdbApiKey) {
-    return 'The TMDB_API_KEY is not configured. Please add it to your environment variables. If you have already added it, you may need to redeploy your application.';
-  }
-  return null;
-}
 
 export async function findIndividualMovies(
   prevState: IndividualMovieState,
