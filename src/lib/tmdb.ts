@@ -74,26 +74,31 @@ export async function searchContent(query?: string, genreNames?: string[], media
     page: '1',
     include_adult: 'false',
   };
-
-  let results: (TmdbMovie | TmdbTvShow)[] = [];
   
-  // Scenario 1: Search by text query
+  let results: (TmdbMovie | TmdbTvShow)[] = [];
+  const genreIds = genreNames?.map(name => genreMap[name]).filter(Boolean);
+
+  // Scenario 1: Search by text query (primary strategy)
   if (query && typeof query === 'string' && query.trim().length > 0) {
     params.query = query;
     const searchEndpoint = mediaType === 'any' ? '/search/multi' : `/search/${mediaType}`;
     const data = await fetchFromTMDB(searchEndpoint, params);
+    
     results = (data.results || []).filter((r: any) => {
       const type = r.media_type || mediaType;
       return (type === 'movie' || type === 'tv') && r.poster_path;
     }).map((r: any) => ({...r, media_type: r.media_type || mediaType}));
 
-  } 
-  // Scenario 2: Search by genres only
-  else if (genreNames && genreNames.length > 0) {
-    const genreIds = genreNames.map(name => genreMap[name]).filter(Boolean).join(',');
-    if (genreIds) {
-        params.with_genres = genreIds;
+    // If genres are also provided, filter the text search results
+    if (genreIds && genreIds.length > 0) {
+      results = results.filter(item => 
+        item.genre_ids?.some(id => genreIds.includes(id))
+      );
     }
+  } 
+  // Scenario 2: Search by genres only (if no query)
+  else if (genreIds && genreIds.length > 0) {
+    params.with_genres = genreIds.join(',');
     
     const mediaToDiscover: ('movie' | 'tv')[] = mediaType === 'any' ? ['movie', 'tv'] : [mediaType];
     
@@ -104,7 +109,7 @@ export async function searchContent(query?: string, genreNames?: string[], media
             return (data.results || []).map((item: any) => ({ ...item, media_type: type }));
         } catch (error) {
             console.error(`Error discovering ${type} with genres:`, error);
-            return []; // Return empty array on error to not fail the whole search
+            return [];
         }
     });
 
@@ -112,7 +117,7 @@ export async function searchContent(query?: string, genreNames?: string[], media
     results = settledResults.flat();
   }
 
-  // Final filtering, sorting, and slicing
+  // Final sorting and slicing
   return results
     .filter(item => item.poster_path)
     .sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0))
